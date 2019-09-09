@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import time
 import datetime
 import urllib.parse
 from collections import namedtuple
@@ -28,7 +29,7 @@ TWSE_BASE_URL = 'http://www.twse.com.tw/'
 TPEX_BASE_URL = 'http://www.tpex.org.tw/'
 DATATUPLE = namedtuple('Data', ['date', 'capacity', 'turnover', 'open',
                                 'high', 'low', 'close', 'change', 'transaction'])
-
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
 
 class BaseFetcher(object):
     def fetch(self, year, month, sid, retry):
@@ -55,8 +56,8 @@ class TWSEFetcher(BaseFetcher):
     def fetch(self, year: int, month: int, sid: str, retry: int=5):
         params = {'date': '%d%02d01' % (year, month), 'stockNo': sid}
         for retry_i in range(retry):
-            r = requests.get(self.REPORT_URL, params=params,
-                             proxies=get_proxies())
+            r = requests.get(self.REPORT_URL, params=params,proxies=get_proxies(),headers=headers)
+            time.sleep(5)
             try:
                 data = r.json()
             except JSONDecodeError:
@@ -102,8 +103,8 @@ class TPEXFetcher(BaseFetcher):
     def fetch(self, year: int, month: int, sid: str, retry: int=5):
         params = {'d': '%d/%d' % (year - 1911, month), 'stkno': sid}
         for retry_i in range(retry):
-            r = requests.get(self.REPORT_URL, params=params,
-                             proxies=get_proxies())
+            r = requests.get(self.REPORT_URL, params=params,proxies=get_proxies(),headers=headers)
+            time.sleep(5)
             try:
                 data = r.json()
             except JSONDecodeError:
@@ -182,6 +183,14 @@ class Stock(analytics.Analytics):
         before = today - datetime.timedelta(days=60)
         self.fetch_from(before.year, before.month)
         self.data = self.data[-31:]
+        return self.data
+
+    def fetch_days(self,days: int=31):
+        """Fetch days data"""
+        today = datetime.datetime.today()
+        before = today - datetime.timedelta(days=days)
+        self.fetch_from(before.year, before.month)
+        self.data = self.data[-days:]
         return self.data
 
     @property
