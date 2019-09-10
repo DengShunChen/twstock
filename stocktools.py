@@ -7,6 +7,7 @@ import pandas as pd
 from datetime import datetime
 import os
 import sys
+from pandas.plotting import register_matplotlib_converters
 import matplotlib.pyplot as plt
 
 class StockTools(object):
@@ -17,21 +18,33 @@ class StockTools(object):
       if self.twse[sid].type == '股票':
         self.sids.append(sid)
 
-  def save_stock(self,sid:str,strdate=None):
+    #register matplotlib converters
+    register_matplotlib_converters()
+    self.dbdir='stocksdb'
+
+  def save_stock(self,sid:str,strdate=None,enddate=None):
     stock_data = stock.Stock(sid)
 
-    if strdate == None:
+    if strdate == None and enddate == None:
       strdate = datetime.now().strftime("%Y%m%d")
-    else:
+    elif enddate == None:
       year = int(strdate[0:4]) ; month = int(strdate[4:6])
       stock_data.fetch(year=year,month=month)
+    else:
+      syear = int(strdate[0:4]) ; smonth = int(strdate[4:6])
+      eyear = int(enddate[0:4]) ; emonth = int(enddate[4:6])
+      stock_data.fetch_from_to(syear=syear,smonth=smonth,eyear=eyear,emonth=emonth)
 
     try:
-      os.mkdir(strdate)
+      os.mkdir(self.dbdir)
     except:
       pass
 
-    conn = sqlite3.connect('%s/%s.db' % (strdate,sid),detect_types=sqlite3.PARSE_DECLTYPES)
+    dbname = '%s/%s.db' % (self.dbdir,sid)
+#   if os.path.isfile(dbname):
+#     os.remove(dbname)
+
+    conn = sqlite3.connect(dbname,detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
 
     # Create table
@@ -39,9 +52,12 @@ class StockTools(object):
         (date timestamp, capacity integer, turnover text, open real, high real, 
         low real, close real, change real, transactions integer)''')
 
+    # Creat unique index
+    cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS date_unique ON stocks (date)')
+
     # Insert a row of data
     for data in stock_data.data:
-      cursor.execute("INSERT INTO stocks VALUES (?,?,?,?,?,?,?,?,?)",data)
+      cursor.execute("INSERT OR IGNORE INTO stocks VALUES (?,?,?,?,?,?,?,?,?)",data)
 
     # Save (commit) the changes
     conn.commit()
@@ -54,7 +70,8 @@ class StockTools(object):
     if strdate == None:
       strdate = datetime.now().strftime("%Y%m%d")
 
-    conn = sqlite3.connect('%s/%s.db' % (strdate,sid),detect_types=sqlite3.PARSE_DECLTYPES)
+    dbname = '%s/%s.db' % (self.dbdir,sid)
+    conn = sqlite3.connect(dbname,detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
 
     # Read table
@@ -200,6 +217,9 @@ class StockTools(object):
 
     buy=''
     sell=''
+    selected_sids = {}
+    selected_sids['buy'] = []
+    selected_sids['sell'] = []
     for sid in self.sids:
       # 讀取資料
       try:
@@ -223,13 +243,16 @@ class StockTools(object):
                 data['ma20'].iloc[-1],data['capacity'].iloc[-1],self.twse[sid].name,capamark)
         # 股票篩選機制
         ma20diff = data['close'].iloc[-1] - data['ma20'].iloc[-1]
-        if ma20diff['close'] > 0 and ma20diff['close'] < ma20_factor*data['ma20'][-1] and data['slop'] > 0:
+        if   ma20diff['close'] > 0 and ma20diff['close'] <  ma20_factor*data['ma20'][-1] and data['slop'] > 0:
           buy  =  buy + ' BUY: ' + stockinfo + '\n'
+          selected_sids['buy'].append(sid)
         elif ma20diff['close'] < 0 and ma20diff['close'] > -ma20_factor*data['ma20'][-1] and data['slop'] < 0:
           sell = sell + 'SELL: ' + stockinfo + '\n'
+          selected_sids['sell'].append(sid)
     print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
     print(buy)
     print(sell)
+    return selected_sids
 
 if __name__ == '__main__':
   st = StockTools()

@@ -193,6 +193,15 @@ class Stock(analytics.Analytics):
         self.data = self.data[-days:]
         return self.data
 
+    def fetch_from_to(self, syear: int, smonth: int, eyear: int, emonth: int):
+        """Fetch data from year, month to specific year month data"""
+        self.raw_data = []
+        self.data = []
+        for year, month in self._month_year_iter(smonth, syear, emonth, eyear):
+            self.raw_data.append(self.fetcher.fetch(year, month, self.sid))
+            self.data.extend(self.raw_data[-1]['data'])
+        return self.data
+
     @property
     def date(self):
         return [d.date for d in self.data]
