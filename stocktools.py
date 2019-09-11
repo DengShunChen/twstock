@@ -11,7 +11,11 @@ from pandas.plotting import register_matplotlib_converters
 import matplotlib.pyplot as plt
 
 class StockTools(object):
-  def __init__(self):
+
+  def __init__(self,strdate=None,enddate=None):
+    self.strdate = strdate
+    self.enddate = enddate
+
     self.sids = []
     self.twse = twstock.twse
     for sid in self.twse.keys():
@@ -22,17 +26,17 @@ class StockTools(object):
     register_matplotlib_converters()
     self.dbdir='stocksdb'
 
-  def save_stock(self,sid:str,strdate=None,enddate=None):
+  def save_stock(self,sid:str):
     stock_data = stock.Stock(sid)
 
-    if strdate == None and enddate == None:
-      strdate = datetime.now().strftime("%Y%m%d")
-    elif enddate == None:
-      year = int(strdate[0:4]) ; month = int(strdate[4:6])
+    if self.strdate == None and self.enddate == None:
+      self.strdate = datetime.now().strftime("%Y-%m-%d")
+    elif self.enddate == None:
+      year = int(self.strdate[0:4]) ; month = int(self.strdate[5:7])
       stock_data.fetch(year=year,month=month)
     else:
-      syear = int(strdate[0:4]) ; smonth = int(strdate[4:6])
-      eyear = int(enddate[0:4]) ; emonth = int(enddate[4:6])
+      syear = int(self.strdate[0:4]) ; smonth = int(self.strdate[5:7])
+      eyear = int(self.enddate[0:4]) ; emonth = int(self.enddate[5:7])
       stock_data.fetch_from_to(syear=syear,smonth=smonth,eyear=eyear,emonth=emonth)
 
     try:
@@ -41,8 +45,6 @@ class StockTools(object):
       pass
 
     dbname = '%s/%s.db' % (self.dbdir,sid)
-#   if os.path.isfile(dbname):
-#     os.remove(dbname)
 
     conn = sqlite3.connect(dbname,detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
@@ -66,17 +68,17 @@ class StockTools(object):
     # Just be sure any changes have been committed or they will be lost.
     conn.close()
 
-  def read_stock(self,sid:str,strdate=None):
-    if strdate == None:
-      strdate = datetime.now().strftime("%Y%m%d")
+  def read_stock(self,sid:str):
+    if self.enddate == None:
+      self.enddate = datetime.now().strftime("%Y-%m-%d")
 
-    dbname = '%s/%s.db' % (self.dbdir,sid)
+    dbdir = 'stocksdb'
+    dbname = '%s/%s.db' % (dbdir,sid)
     conn = sqlite3.connect(dbname,detect_types=sqlite3.PARSE_DECLTYPES)
     cursor = conn.cursor()
 
     # Read table
-    sqlite_data = cursor.execute('SELECT * FROM stocks').fetchall()
-
+    sqlite_data = cursor.execute('''SELECT * FROM stocks WHERE date >= datetime(?) AND date <= datetime(?)''',(self.strdate,self.enddate))
     data_pd = pd.DataFrame(sqlite_data,columns=['date', 'capacity', 'turnover', 'open', 'high', 'low', 'close', 'change', 'transaction'])
 
     return data_pd
@@ -89,20 +91,17 @@ class StockTools(object):
             sids.append(sid)
     return sids
 
-  def fetch_stock_all(self,strdate=None):
+  def fetch_all(self):
     for sid in self.sids:
       print('Downloading ...%5s'%(sid))
       try:
-        self.read_stock(sid,strdate)
+        self.save_stock(sid)
       except:
-        try:
-          self.save_stock(sid,strdate)
-        except:
-          print(self.twse[sid].name,sid,' Calculate failed')
+        print(self.twse[sid].name,sid,' Calculate failed')
 
-  def _stock_anal(self,sid:str,strdate=None,sqldb=True):
+  def _stock_anal(self,sid:str,sqldb=True):
     if sqldb:
-      stock_pd = self.read_stock(sid,strdate)
+      stock_pd = self.read_stock(sid)
     else:
       stock_data = stock.Stock(sid).fetch_days(180)
       stock_pd = pd.DataFrame(stock_data)
@@ -128,9 +127,9 @@ class StockTools(object):
 
     return data
 
-  def plot(self,sid:str,strdate=None,sqldb=True):
+  def plot(self,sid:str,sqldb=True):
 
-    data = self._stock_anal(sid,strdate=strdate,sqldb=sqldb)
+    data = self._stock_anal(sid,sqldb=sqldb)
 
     def make_patch_spines_invisible(ax):
       ax.set_frame_on(True)
@@ -182,8 +181,8 @@ class StockTools(object):
     fig.savefig('analysis_%d%s.pdf' % (data['stock_id'],data['stock_name']))
     plt.show()
 
-  def _get_info(self,sid:str,strdate=None):
-    stock_pd = self.read_stock(sid,strdate)
+  def _get_info(self,sid:str):
+    stock_pd = self.read_stock(sid)
     stock_pd = stock_pd.set_index('date')
     if stock_pd.shape[0] == 0:
       raise DataEmptyError
@@ -209,7 +208,7 @@ class StockTools(object):
 
     return data
 
-  def select(self,strdate=None):
+  def select(self):
     threshold = 0.002
     ma20_factor = 0.01        # 10% make sure the price just over/below ma20
     capacity_bound = 2000
@@ -223,7 +222,7 @@ class StockTools(object):
     for sid in self.sids:
       # 讀取資料
       try:
-        data = self._get_info(sid,strdate)
+        data = self._get_info(sid)
       except:
         continue
         #print('%-8s %-4s Calculate failed'%(twse[sid].name,sid))
@@ -255,9 +254,5 @@ class StockTools(object):
     return selected_sids
 
 if __name__ == '__main__':
-  st = StockTools()
-  #print(st.get_stock('2330'))
-  #print(st._get_info('2330'))
-  #st.plot(st.stock_anal('1101','20180801'))
-  #st.plot(st.stock_anal('1101'))
-  st.select() 
+  st = StockTools('2018-06-01','2018-12-31')
+  st.fetch_all()
