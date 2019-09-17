@@ -12,9 +12,86 @@ import matplotlib.pyplot as plt
 
 class StockTools(object):
 
+  class StockReal(object):
+
+    def __init__(self,sid:str):
+        self.sid = sid
+        
+    def get_data(self):
+        self.real_data = realtime.get(self.sid)
+        self.real = self.real_data['realtime']
+        self.info = self.real_data['info']
+        self.latest_trade_price = self.real['latest_trade_price']
+        self.accumulate_trade_volume = self.real['accumulate_trade_volume']
+        self.best_bid_price = self.real['best_bid_price']
+        self.best_ask_price = self.real['best_ask_price']
+        self.best_bid_volume = self.real['best_bid_volume']
+        self.best_ask_volume = self.real['best_ask_volume']
+        self.start = self.real['open']
+        self.high = self.real['high']
+        self.low = self.real['low']
+
+    def plot(self):
+        fig, ax1 = plt.subplots(figsize=(10, 3))
+        x1 = [1,1,1,1,1]
+        x3 = [1]
+
+        bb = [ float(price) for price in self.best_bid_price ]
+        ba= [ float(price) for price in self.best_ask_price ]
+        bbv = [ float(price) for price in self.best_bid_volume ]
+        bav= [ float(price) for price in self.best_ask_volume ]
+        
+        yh = [float(self.high)] 
+        yl = [float(self.low)]
+        op = [float(self.start)]
+        price = [float(self.latest_trade_price)]
+
+        ax1.plot(ba,x1,color='r',marker='.',label='賣出價格')
+        ax1.plot(bb,x1,color='b',marker='.',label='買進價格')
+
+        ax1.scatter(yh,x3,s=50,color='r',marker='X',label='最高價'+self.high)
+        ax1.scatter(yl,x3,s=50,color='b',marker='X',label='最低價'+self.low)
+        
+        ax1.scatter(op,[2],s=50,color='k',marker='h',label='開盤價'+self.start)
+        diff = price[0] - op[0]
+        if diff > 0:
+            color = 'r'
+            marker= '^'
+        else:
+            color = 'g'
+            marker='v'
+        ax1.scatter(price,[2],s=50,color=color,marker=marker,label='現價'+self.start)
+        
+        ax1.set_ylim(0,4)
+        ax1.set_yticklabels([])
+        
+        ax1.set_title(self.info['fullname']+'  '+self.info['time'])
+        
+        ax2 = ax1.twinx()
+        ax2.plot(ba,bav,color='r',label='賣出數量',linestyle='dashed',alpha=0.5)
+        ax2.plot(bb,bbv,color='b',label='買進數量',linestyle='dashed',alpha=0.5)        
+        ax2.set_ylim(0,1500)
+        
+        ax1.legend(loc='upper right')
+        ax2.legend(loc='upper left')
+                 
+        plt.tight_layout()
+        plt.savefig(self.sid+'.pdf')
+        plt.savefig(self.sid+'.png')
+        plt.show()
+
   def __init__(self,strdate=None,enddate=None):
+
+    self.firstdate = 'None'
+    self.lastdate = 'None'
+
     self.strdate = strdate
     self.enddate = enddate
+
+    self.threshold = 0.002
+    self.ma20_factor = 0.01        # 10% make sure the price just over/below ma20
+    self.capacity_bound = 2000
+    self.bigcapa_factor = 1.5
 
     self.sids = []
     self.twse = twstock.twse
@@ -27,17 +104,17 @@ class StockTools(object):
     self.dbdir='stocksdb'
 
   def save_stock(self,sid:str):
-    stock_data = stock.Stock(sid)
+    self.stock_data = stock.Stock(sid)
 
     if self.strdate == None and self.enddate == None:
       self.strdate = datetime.now().strftime("%Y-%m-%d")
     elif self.enddate == None:
       year = int(self.strdate[0:4]) ; month = int(self.strdate[5:7])
-      stock_data.fetch(year=year,month=month)
+      self.stock_data.fetch(year=year,month=month)
     else:
       syear = int(self.strdate[0:4]) ; smonth = int(self.strdate[5:7])
       eyear = int(self.enddate[0:4]) ; emonth = int(self.enddate[5:7])
-      stock_data.fetch_from_to(syear=syear,smonth=smonth,eyear=eyear,emonth=emonth)
+      self.stock_data.fetch_from_to(syear=syear,smonth=smonth,eyear=eyear,emonth=emonth)
 
     try:
       os.mkdir(self.dbdir)
@@ -58,7 +135,7 @@ class StockTools(object):
     cursor.execute('CREATE UNIQUE INDEX IF NOT EXISTS date_unique ON stocks (date)')
 
     # Insert a row of data
-    for data in stock_data.data:
+    for data in self.stock_data.data:
       cursor.execute("INSERT OR IGNORE INTO stocks VALUES (?,?,?,?,?,?,?,?,?)",data)
 
     # Save (commit) the changes
@@ -79,9 +156,12 @@ class StockTools(object):
 
     # Read table
     sqlite_data = cursor.execute('''SELECT * FROM stocks WHERE date >= datetime(?) AND date <= datetime(?)''',(self.strdate,self.enddate))
-    data_pd = pd.DataFrame(sqlite_data,columns=['date', 'capacity', 'turnover', 'open', 'high', 'low', 'close', 'change', 'transaction'])
+    self.stock_pd = pd.DataFrame(sqlite_data,columns=['date', 'capacity', 'turnover', 'open', 'high', 'low', 'close', 'change', 'transaction'])
+    
+    self.firstdate = self.stock_pd.date.iloc[0].strftime('%Y%m%d')
+    self.lastdate = self.stock_pd.date.iloc[-1].strftime('%Y%m%d')
 
-    return data_pd
+    return self.stock_pd
 
   def get_stockids(self):
     sids = []
@@ -99,37 +179,55 @@ class StockTools(object):
       except:
         print(self.twse[sid].name,sid,' Calculate failed')
 
-  def _stock_anal(self,sid:str,sqldb=True):
-    if sqldb:
-      stock_pd = self.read_stock(sid)
-    else:
-      stock_data = stock.Stock(sid).fetch_days(180)
-      stock_pd = pd.DataFrame(stock_data)
+  def _stock_anal(self,sid:str,real:bool):
+    # read in data 
+    self.read_stock(sid)
 
-    stock_pd = stock_pd.set_index('date')
-    stock_ma3 = stock_pd.rolling(3).mean()
-    stock_ma5 = stock_pd.rolling(5).mean()
-    stock_ma8 = stock_pd.rolling(8).mean()
-    data = pd.concat([stock_ma3['close'],stock_ma5['close'],stock_ma8['close']],axis=1)
-    std = data.std(axis=1) ; mean = data.mean(axis=1)
+    if real:
+      data = realtime.get(sid)
+      real_data = data['realtime']
+      real_info = data['info']
+      latest_trade_price = real_data['latest_trade_price']
+      accumulate_trade_volume = real_data['accumulate_trade_volume']
+      datalist = [[datetime.now(),int(accumulate_trade_volume)*1000,None,None,None,None,latest_trade_price,None,None],]
+      labelist = ['date','capacity','turnover','open','high','low','close','change','transaction']
+      real_pd = pd.DataFrame(datalist, columns=labelist)
+      self.stock_pd = self.stock_pd.append(real_pd, ignore_index=True)
+      timestamp = real_info['time']
+    else:
+      timestamp = ''
+      
+    self.stock_pd = self.stock_pd.set_index('date')
+
+    self.ma03 = self.stock_pd.rolling(3).mean()
+    self.ma05 = self.stock_pd.rolling(5).mean()
+    self.ma08 = self.stock_pd.rolling(8).mean()
+    self.ma20 = self.stock_pd.rolling(20).mean()
+    self.ma60 = self.stock_pd.rolling(60).mean()
+   
+    self.ma_pd = pd.concat([self.ma03['close'],self.ma05['close'],self.ma08['close'],self.ma20['close'],self.ma60['close']],axis=1)
+    self.ma_pd.columns=['ma03','ma05','ma08','ma20','ma60']
+    self.ma_std  = self.ma_pd.loc[:,['ma03','ma05','ma08']].std(axis=1) 
+    self.ma_mean = self.ma_pd.loc[:,['ma03','ma05','ma08']].mean(axis=1)
 
     data = {}
-    data['stock_pd'] = stock_pd
-    data['stock_ma3'] = stock_ma3
-    data['stock_ma5'] = stock_ma5
-    data['stock_ma8'] = stock_ma8
-    data['stock_ma20'] = stock_pd.rolling(20).mean()
-    data['stock_ma60'] = stock_pd.rolling(60).mean()
-    data['stock_std'] = std
-    data['stock_norstd'] = std.div(mean)
+    data['stock_pd'] = self.stock_pd
+    data['stock_ma03'] = self.ma03
+    data['stock_ma05'] = self.ma05
+    data['stock_ma08'] = self.ma08
+    data['stock_ma20'] = self.ma20
+    data['stock_ma60'] = self.ma60
+    data['stock_std'] = self.ma_std
+    data['stock_norstd'] = self.ma_std.div(self.ma_mean)
     data['stock_name'] = self.twse[sid].name
     data['stock_id'] = int(sid)
+    data['timestamp'] = timestamp
 
     return data
 
-  def plot(self,sid:str,sqldb=True):
+  def plot(self,sid:str,real=False,buyprice:float=None):
 
-    data = self._stock_anal(sid,sqldb=sqldb)
+    data = self._stock_anal(sid,real)
 
     def make_patch_spines_invisible(ax):
       ax.set_frame_on(True)
@@ -144,24 +242,26 @@ class StockTools(object):
     ax1.set_xlabel('日期')
     ax1.set_ylabel('價格（每股）')
 
-    ax1.plot(data['stock_pd'].close, '-' , label="收盤價",color='k',zorder=10)
-    ax1.plot(data['stock_ma3'].close, '-' , label="3日均價",zorder=10)
-    ax1.plot(data['stock_ma5'].close, '-' , label="5日均價",zorder=10)
-    ax1.plot(data['stock_ma8'].close, '-' , label="8日均價",zorder=10)
-    ax1.plot(data['stock_ma20'].close, '-' , label="20日均價",zorder=10)
-    ax1.plot(data['stock_ma60'].close, '-' , label="60日均價",zorder=10)
+    ax1.plot(data['stock_ma03'].close, '-' , label="3日均價",zorder=10, linewidth=2)
+    ax1.plot(data['stock_ma05'].close, '-' , label="5日均價",zorder=10, linewidth=2)
+    ax1.plot(data['stock_ma08'].close, '-' , label="8日均價",zorder=10, linewidth=2)
+    ax1.plot(data['stock_ma20'].close, '-' , label="20日均價",zorder=10, linewidth=2)
+    ax1.plot(data['stock_ma60'].close, '-' , label="60日均價",zorder=10, linewidth=2)
+    ax1.plot(data['stock_pd'].close, '-' , label="收盤價",color='k',zorder=10, linewidth=2.4)
     ax1.tick_params(axis='y', labelcolor='k')
     ax1.legend(loc='best')
+    if buyprice != None:
+      ax1.axhline(y=buyprice, color='k', alpha=0.5, zorder=6)
+    plt.grid(True,which='both')
 
     ax2 = ax1.twinx()
-
     ax2.spines["right"].set_position(("axes", 1.1))
     make_patch_spines_invisible(ax2)
     ax2.spines["right"].set_visible(True)
-
     ax2.set_ylabel('變異係數',color='b')
     ax2.tick_params(axis='y', labelcolor='b')
-    ax2.plot(data['stock_norstd'], label="3,5,8日離散度",color='b',alpha=0.5, zorder=20)
+    ax2.plot(data['stock_norstd'], label="3,5,8日離散度",color='b',alpha=0.5, linestyle='dashed', zorder=5)
+    ax2.axhline(y=self.threshold, color='r', alpha=0.5, zorder=6)
     #ax2.legend(loc='upper right')
 
     ax3 = ax1.twinx()
@@ -173,12 +273,12 @@ class StockTools(object):
     fig.autofmt_xdate()
     fig.tight_layout()
 
-    plt.title('%d %s 股市分析圖   ' % (data['stock_id'],data['stock_name']) ,loc='right')
-    plt.grid(True,which='both')
+    plt.title('%s %d %s 股市分析圖   ' % (data['timestamp'],data['stock_id'],data['stock_name']) ,loc='right')
     plt.tight_layout()
 
     fig.savefig('analysis_%d%s.png' % (data['stock_id'],data['stock_name']))
     fig.savefig('analysis_%d%s.pdf' % (data['stock_id'],data['stock_name']))
+
     plt.show()
 
   def _get_info(self,sid:str):
@@ -187,12 +287,12 @@ class StockTools(object):
     if stock_pd.shape[0] == 0:
       raise DataEmptyError
 
-    stock_ma3 = stock_pd.rolling(3).mean()
-    stock_ma5 = stock_pd.rolling(5).mean()
-    stock_ma8 = stock_pd.rolling(8).mean()
+    stock_ma03 = stock_pd.rolling(3).mean()
+    stock_ma05 = stock_pd.rolling(5).mean()
+    stock_ma08 = stock_pd.rolling(8).mean()
     stock_ma20 = stock_pd.rolling(20).mean()
 
-    data = pd.concat([stock_ma3['close'],stock_ma5['close'],stock_ma8['close']],axis=1)
+    data = pd.concat([stock_ma03['close'],stock_ma05['close'],stock_ma08['close']],axis=1)
     std = data.std(axis=1)
     mean = data.mean(axis=1)
 
@@ -209,10 +309,6 @@ class StockTools(object):
     return data
 
   def select(self):
-    threshold = 0.002
-    ma20_factor = 0.01        # 10% make sure the price just over/below ma20
-    capacity_bound = 2000
-    bigcapa_factor = 1.5
 
     buy=''
     sell=''
@@ -228,10 +324,10 @@ class StockTools(object):
         #print('%-8s %-4s Calculate failed'%(twse[sid].name,sid))
 
       # 必要篩選條件
-      bound = data['capacity'].iloc[-1] > capacity_bound
-      if data['norstd'][-1] < threshold and bound['capacity']:
+      bound = data['capacity'].iloc[-1] > self.capacity_bound
+      if data['norstd'][-1] < self.threshold and bound['capacity']:
         # 爆大量分析
-        capacond = data['capacity'].iloc[-1] > bigcapa_factor * data['capacity'].iloc[-2]
+        capacond = data['capacity'].iloc[-1] > self.bigcapa_factor * data['capacity'].iloc[-2]
         if capacond['capacity']:
           capamark='爆大量'
         else:
@@ -242,12 +338,13 @@ class StockTools(object):
                 data['ma20'].iloc[-1],data['capacity'].iloc[-1],self.twse[sid].name,capamark)
         # 股票篩選機制
         ma20diff = data['close'].iloc[-1] - data['ma20'].iloc[-1]
-        if   ma20diff['close'] > 0 and ma20diff['close'] <  ma20_factor*data['ma20'][-1] and data['slop'] > 0:
+        if   ma20diff['close'] > 0 and ma20diff['close'] <  self.ma20_factor*data['ma20'][-1] and data['slop'] > 0:
           buy  =  buy + ' BUY: ' + stockinfo + '\n'
           selected_sids['buy'].append(sid)
-        elif ma20diff['close'] < 0 and ma20diff['close'] > -ma20_factor*data['ma20'][-1] and data['slop'] < 0:
+        elif ma20diff['close'] < 0 and ma20diff['close'] > -self.ma20_factor*data['ma20'][-1] and data['slop'] < 0:
           sell = sell + 'SELL: ' + stockinfo + '\n'
           selected_sids['sell'].append(sid)
+    print('有效日期：',self.lastdate)
     print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
     print(buy)
     print(sell)
@@ -255,4 +352,4 @@ class StockTools(object):
 
 if __name__ == '__main__':
   st = StockTools('2018-06-01','2018-12-31')
-  st.fetch_all()
+#  st.fetch_all()
