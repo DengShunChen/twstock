@@ -60,7 +60,7 @@ class StockTools(object):
         else:
             color = 'g'
             marker='v'
-        ax1.scatter(price,[2],s=50,color=color,marker=marker,label='現價'+self.start)
+        ax1.scatter(price,[2],s=50,color=color,marker=marker,label='現價'+self.latest_trade_price)
         
         ax1.set_ylim(0,4)
         ax1.set_yticklabels([])
@@ -179,7 +179,7 @@ class StockTools(object):
       except:
         print(self.twse[sid].name,sid,' Calculate failed')
 
-  def _stock_anal(self,sid:str,real:bool):
+  def _stock_anal(self,sid:str,real:bool=False):
     # read in data 
     self.read_stock(sid)
 
@@ -209,25 +209,14 @@ class StockTools(object):
     self.ma_pd.columns=['ma03','ma05','ma08','ma20','ma60']
     self.ma_std  = self.ma_pd.loc[:,['ma03','ma05','ma08']].std(axis=1) 
     self.ma_mean = self.ma_pd.loc[:,['ma03','ma05','ma08']].mean(axis=1)
-
-    data = {}
-    data['stock_pd'] = self.stock_pd
-    data['stock_ma03'] = self.ma03
-    data['stock_ma05'] = self.ma05
-    data['stock_ma08'] = self.ma08
-    data['stock_ma20'] = self.ma20
-    data['stock_ma60'] = self.ma60
-    data['stock_std'] = self.ma_std
-    data['stock_norstd'] = self.ma_std.div(self.ma_mean)
-    data['stock_name'] = self.twse[sid].name
-    data['stock_id'] = int(sid)
-    data['timestamp'] = timestamp
-
-    return data
+    self.norstd = self.ma_std.div(self.ma_mean)
+    self.name = self.twse[sid].name
+    self.id = int(sid)
+    self.timestamp = timestamp 
 
   def plot(self,sid:str,real=False,buyprice:float=None):
 
-    data = self._stock_anal(sid,real)
+    self._stock_anal(sid,real)
 
     def make_patch_spines_invisible(ax):
       ax.set_frame_on(True)
@@ -242,12 +231,12 @@ class StockTools(object):
     ax1.set_xlabel('日期')
     ax1.set_ylabel('價格（每股）')
 
-    ax1.plot(data['stock_ma03'].close, '-' , label="3日均價",zorder=10, linewidth=2)
-    ax1.plot(data['stock_ma05'].close, '-' , label="5日均價",zorder=10, linewidth=2)
-    ax1.plot(data['stock_ma08'].close, '-' , label="8日均價",zorder=10, linewidth=2)
-    ax1.plot(data['stock_ma20'].close, '-' , label="20日均價",zorder=10, linewidth=2)
-    ax1.plot(data['stock_ma60'].close, '-' , label="60日均價",zorder=10, linewidth=2)
-    ax1.plot(data['stock_pd'].close, '-' , label="收盤價",color='k',zorder=10, linewidth=2.4)
+    ax1.plot(self.ma03.close, '-' , label="3日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma05.close, '-' , label="5日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma08.close, '-' , label="8日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma20.close, '-' , label="20日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma60.close, '-' , label="60日均價",zorder=10, linewidth=2)
+    ax1.plot(self.stock_pd.close, '-' , label="收盤價",color='k',zorder=10, linewidth=2.4)
     ax1.tick_params(axis='y', labelcolor='k')
     ax1.legend(loc='best')
     if buyprice != None:
@@ -260,24 +249,24 @@ class StockTools(object):
     ax2.spines["right"].set_visible(True)
     ax2.set_ylabel('變異係數',color='b')
     ax2.tick_params(axis='y', labelcolor='b')
-    ax2.plot(data['stock_norstd'], label="3,5,8日離散度",color='b',alpha=0.5, linestyle='dashed', zorder=5)
+    ax2.plot(self.norstd, label="3,5,8日離散度",color='b',alpha=0.5, zorder=5)
     ax2.axhline(y=self.threshold, color='r', alpha=0.5, zorder=6)
     #ax2.legend(loc='upper right')
 
     ax3 = ax1.twinx()
     ax3.set_ylabel('成交量(張)',color='g')
     ax3.tick_params(axis='y', labelcolor='g')
-    ax3.bar(data['stock_pd'].index,data['stock_pd'].capacity.div(1000), width=1.2,label="成交量",color='g',alpha=0.3, zorder=0)
+    ax3.bar(self.stock_pd.index,self.stock_pd.capacity.div(1000), width=1.2,label="成交量",color='g',alpha=0.3, zorder=0)
     #ax3.legend(loc='upper center')
 
     fig.autofmt_xdate()
     fig.tight_layout()
 
-    plt.title('%s %d %s 股市分析圖   ' % (data['timestamp'],data['stock_id'],data['stock_name']) ,loc='right')
+    plt.title('%s %d %s 股市分析圖   ' % (self.timestamp,self.id,self.name) ,loc='right')
     plt.tight_layout()
 
-    fig.savefig('analysis_%d%s.png' % (data['stock_id'],data['stock_name']))
-    fig.savefig('analysis_%d%s.pdf' % (data['stock_id'],data['stock_name']))
+    fig.savefig('analysis_%d%s.png' % (self.id,self.name))
+    fig.savefig('analysis_%d%s.pdf' % (self.id,self.name))
 
     plt.show()
 
