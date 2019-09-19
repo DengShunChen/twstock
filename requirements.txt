@@ -91,3 +91,4 @@ widgetsnbextension==3.5.1
 wrapt==1.11.2
 xlrd==1.2.0
 yfinance==0.1.45
+gunicorn==19.9.0
