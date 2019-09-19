@@ -293,7 +293,8 @@ class StockTools(object):
     data['close'] = close
     data['capacity'] = capacity
     data['ma20'] = stock_ma20['close']
-    data['slop'] = 0.5*(stock_pd['close'].iloc[-1] - stock_pd['close'].iloc[-3])
+    #data['slop'] = 0.5*(stock_pd['close'].iloc[-1] - stock_pd['close'].iloc[-3])
+    data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-2])
 
     return data
 
