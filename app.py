@@ -35,6 +35,28 @@ stocks = [select['sell']]
 logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
 logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
 
+def benner():
+  ben = [
+      html.H2('Taiwan Stock Tiger',
+      style={'display': 'inline',
+         'float': 'left',
+         'font-size': '2.65em',
+         'margin-left': '7px',
+         'font-weight': 'bolder',
+         'font-family': 'Product Sans',
+         'color': "rgba(117, 117, 117, 0.95)",
+         'margin-top': '20px',
+         'margin-bottom': '0'
+         }),
+      html.Img(src=logoimgsrc,
+        style={
+          'height': '100px',
+          'float': 'right'
+        },
+      )
+  ]
+  return ben
+
 app.layout = html.Div([
     html.Div(
       id='tabs-content-classes'
@@ -51,25 +73,7 @@ app.layout = html.Div([
                 className='custom-tab',
                 selected_className='custom-tab--selected',
                 children=[
-                  html.Div([
-                    html.H2('Taiwan Stock Tiger',
-                    style={'display': 'inline',
-                       'float': 'left',
-                       'font-size': '2.65em',
-                       'margin-left': '7px',
-                       'font-weight': 'bolder',
-                       'font-family': 'Product Sans',
-                       'color': "rgba(117, 117, 117, 0.95)",
-                       'margin-top': '20px',
-                       'margin-bottom': '0'
-                       }),
-                    html.Img(src=logoimgsrc,
-                      style={
-                        'height': '100px',
-                        'float': 'right'
-                      },
-                    ),
-                  ]),
+                  html.Div(benner()),
                   dcc.Dropdown(
                     id='stock-ticker-input',
                     options=[{'label': 'BUY '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']] +
@@ -84,19 +88,31 @@ app.layout = html.Div([
                 label='個股分析',
                 value='tab-2',
                 className='custom-tab',
-                selected_className='custom-tab--selected'
+                selected_className='custom-tab--selected',
+                children=[
+                  html.Div(benner()),
+                  html.Div(id='graphs2')
+                ]
             ),
             dcc.Tab(
                 label='主力分析',
                 value='tab-3', 
                 className='custom-tab',
-                selected_className='custom-tab--selected'
+                selected_className='custom-tab--selected',
+                children=[
+                  html.Div(benner()),
+                  html.Div(id='graphs3')
+                ]
             ),
             dcc.Tab(
                 label='股票損益',
                 value='tab-4',
                 className='custom-tab',
-                selected_className='custom-tab--selected'
+                selected_className='custom-tab--selected',
+                children=[
+                  html.Div(benner()),
+                  html.Div(id='graphs4')
+                ]
             ),
         ])
 ])
