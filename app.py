@@ -1,3 +1,4 @@
+#!/usr/bin/env python 
 from stocktools import StockTools
 import dash
 import dash_core_components as dcc
@@ -35,9 +36,25 @@ logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-brand
 logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
 
 app.layout = html.Div([
-    html.Div([
-        html.H2('Taiwan Stock Tiger',
-                style={'display': 'inline',
+    html.Div(
+      id='tabs-content-classes'
+    ),
+    dcc.Tabs(
+        id="tabs-with-classes",
+        value='tab-1',
+        parent_className='custom-tabs',
+        className='custom-tabs-container',
+        children=[
+            dcc.Tab(
+                label='Tab one',
+                id='tab1',
+                value='tab-1',
+                className='custom-tab',
+                selected_className='custom-tab--selected',
+                children=[
+                  html.Div([
+                    html.H2('Taiwan Stock Tiger',
+                    style={'display': 'inline',
                        'float': 'left',
                        'font-size': '2.65em',
                        'margin-left': '7px',
@@ -47,22 +64,42 @@ app.layout = html.Div([
                        'margin-top': '20px',
                        'margin-bottom': '0'
                        }),
-        html.Img(src=logoimgsrc,
-                style={
-                    'height': '100px',
-                    'float': 'right'
-                },
-        ),
-    ]),
-    dcc.Dropdown(
-        id='stock-ticker-input',
-        options=[{'label': 'BUY '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']] + 
-                [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']],
-        value=[  str(s) for s in select['buy']],
-        multi=True
-    ),
-    html.Div(id='graphs')
-], className="container")
+                    html.Img(src=logoimgsrc,
+                      style={
+                        'height': '100px',
+                        'float': 'right'
+                      },
+                    ),
+                  ]),
+                  dcc.Dropdown(
+                    id='stock-ticker-input',
+                    options=[{'label': 'BUY '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']] +
+                            [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']],
+                    value=[  str(s) for s in select['buy']],
+                    multi=True
+                  ),
+                  html.Div(id='graphs1')
+                ],
+              ),
+            dcc.Tab(
+                label='Tab two',
+                value='tab-2',
+                className='custom-tab',
+                selected_className='custom-tab--selected'
+            ),
+            dcc.Tab(
+                label='Tab three, multiline',
+                value='tab-3', className='custom-tab',
+                selected_className='custom-tab--selected'
+            ),
+            dcc.Tab(
+                label='Tab four',
+                value='tab-4',
+                className='custom-tab',
+                selected_className='custom-tab--selected'
+            ),
+        ])
+])
 
 st.strdate = dt.datetime.now() - dt.timedelta(days=180)
 
@@ -74,7 +111,7 @@ def bbands(price, window_size=10, num_of_std=5):
     return rolling_mean, upper_band, lower_band
 
 @app.callback(
-    dash.dependencies.Output('graphs','children'),
+    dash.dependencies.Output('graphs1','children'),
     [dash.dependencies.Input('stock-ticker-input', 'value')])
 def update_graph(tickers):
     graphs = []
