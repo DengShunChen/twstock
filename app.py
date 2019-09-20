@@ -19,7 +19,8 @@ server = app.server
 
 app.scripts.config.serve_locally = False
 
-colorscale = cl.scales['9']['qual']['Paired']
+colorscale2 = cl.scales['9']['qual']['Paired']
+colorscale1 = cl.scales['9']['div']['RdYlGn']
 
 # Stocks
 st = StockTools()
@@ -29,11 +30,11 @@ st.enddata = dt.datetime.now().strftime('%Y-%m-%d')
 select = st.select()
 stocks = [select['sell']]
 
-df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/dash-stock-ticker-demo.csv')
+#df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/dash-stock-ticker-demo.csv')
 
 app.layout = html.Div([
     html.Div([
-        html.H2('Finance Explorer',
+        html.H2('Taiwan Stock Tiger',
                 style={'display': 'inline',
                        'float': 'left',
                        'font-size': '2.65em',
@@ -87,7 +88,7 @@ def update_graph(tickers):
             #dff = df[df['Stock'] == ticker]
             dff = st.read_stock(ticker)
 
-            candlestick = {
+            candlestick = [{
                 'x': dff['date'],
                 'open': dff['open'],
                 'high': dff['high'],
@@ -96,29 +97,31 @@ def update_graph(tickers):
                 'type': 'candlestick',
                 'name': ticker + ' ' +st.twse[ticker].name,
                 'legendgroup': st.twse[ticker].name,
-                'increasing': {'line': {'color': colorscale[0]}},
-                'decreasing': {'line': {'color': colorscale[1]}}
-            }
+                'increasing': {'line': {'color': colorscale1[0]}},
+                'decreasing': {'line': {'color': colorscale1[-1]}}
+            }]
             bb_bands = bbands(dff.close)
             bollinger_traces = [{
                 'x': dff['date'], 'y': y,
                 'type': 'scatter', 'mode': 'lines',
-                'line': {'width': 1, 'color': colorscale[(i*2) % len(colorscale)]},
+                'line': {'width': 1, 'color': colorscale2[(i*2) % len(colorscale)]},
                 'hoverinfo': 'none',
                 'legendgroup': ticker,
                 'showlegend': True if i == 0 else False,
                 'name': '{} - bollinger bands'.format(ticker)
             } for i, y in enumerate(bb_bands)]
-            graphs.append(dcc.Graph(
-                id=ticker,
-                figure={
-                    'data': [candlestick] + bollinger_traces,
+            graphs.append(
+                dcc.Graph(
+                  id=ticker,
+                  figure={
+                    'data': candlestick + bollinger_traces,
                     'layout': {
                         'margin': {'b': 0, 'r': 10, 'l': 60, 't': 0},
                         'legend': {'x': 0}
                     }
-                }
-            ))
+                  }
+                )
+            )
 
     return graphs
 
