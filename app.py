@@ -31,6 +31,8 @@ select = st.select()
 stocks = [select['sell']]
 
 #df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/dash-stock-ticker-demo.csv')
+logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
+logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
 
 app.layout = html.Div([
     html.Div([
@@ -45,7 +47,7 @@ app.layout = html.Div([
                        'margin-top': '20px',
                        'margin-bottom': '0'
                        }),
-        html.Img(src="https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png",
+        html.Img(src=logoimgsrc,
                 style={
                     'height': '100px',
                     'float': 'right'
