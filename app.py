@@ -15,25 +15,35 @@ import time
 #    __name__, 
 #    assets_external_scripts='https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
 #)
+# Stocks
+st = StockTools()
+
+# dash 
 app = dash.Dash()
 server = app.server
 
 app.scripts.config.serve_locally = False
+app.config.suppress_callback_exceptions=True
 
 colorscale2 = cl.scales['9']['qual']['Paired']
 colorscale1 = cl.scales['9']['div']['RdYlGn']
 
-# Stocks
-st = StockTools()
-st.strdate = dt.datetime.now() - dt.timedelta(days=31)
-st.strdate = st.strdate.strftime('%Y-%m-%d')
-st.enddata = dt.datetime.now().strftime('%Y-%m-%d')
-select = st.select()
-stocks = [select['sell']]
-
 #df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/dash-stock-ticker-demo.csv')
 logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
 logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
+
+def get_stock(date:str=None):
+  if date == None:
+    st.strdate = dt.datetime.now() - dt.timedelta(days=31)
+    st.strdate = st.strdate.strftime('%Y-%m-%d')
+    st.enddate = dt.datetime.now().strftime('%Y-%m-%d')
+  else:
+    st.strdate = dt.datetime.strptime(date,'%Y-%m-%d') - dt.timedelta(days=31)
+    st.strdate = st.strdate.strftime('%Y-%m-%d')
+    st.enddate = date        
+    print(st.strdate,st.enddate) 
+  select = st.select()
+  return select
 
 def benner():
   ben = [
@@ -74,11 +84,15 @@ app.layout = html.Div([
                 selected_className='custom-tab--selected',
                 children=[
                   html.Div(benner()),
+                  dcc.DatePickerSingle(
+                    id='date-picker-single',
+                    min_date_allowed=dt.datetime(2000, 1, 1),
+                    max_date_allowed=dt.datetime(2100, 12, 31),
+                    initial_visible_month=dt.datetime.now(),
+                    date=dt.datetime.now().strftime('%Y-%m-%d')
+                  ),
                   dcc.Dropdown(
                     id='stock-ticker-input',
-                    options=[{'label': 'BUY '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']] +
-                            [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']],
-                    value=[  str(s) for s in select['buy']],
                     multi=True
                   ),
                   html.Div(id='graphs1')
@@ -127,6 +141,18 @@ def bbands(price, window_size=10, num_of_std=5):
     return rolling_mean, upper_band, lower_band
 
 @app.callback(
+    dash.dependencies.Output('stock-ticker-input','options'),
+    [dash.dependencies.Input('date-picker-single', 'date')])
+def update_ticker(date):
+
+    select = get_stock(date)
+
+    options = [{'label': 'BUY  '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']]
+    options = options + [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']]
+    
+    return options
+
+@app.callback(
     dash.dependencies.Output('graphs1','children'),
     [dash.dependencies.Input('stock-ticker-input', 'value')])
 def update_graph(tickers):
@@ -138,6 +164,9 @@ def update_graph(tickers):
             style={'marginTop': 20, 'marginBottom': 20}
         ))
     else:
+        st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
+        st.strdate = st.strdate.strftime('%Y-%m-%d')
+
         for i, ticker in enumerate(tickers):
 
             #dff = df[df['Stock'] == ticker]
