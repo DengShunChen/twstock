@@ -46,8 +46,7 @@ app.layout = html.Div([
         className='custom-tabs-container',
         children=[
             dcc.Tab(
-                label='Tab one',
-                id='tab1',
+                label='選股',
                 value='tab-1',
                 className='custom-tab',
                 selected_className='custom-tab--selected',
@@ -82,18 +81,19 @@ app.layout = html.Div([
                 ],
               ),
             dcc.Tab(
-                label='Tab two',
+                label='個股分析',
                 value='tab-2',
                 className='custom-tab',
                 selected_className='custom-tab--selected'
             ),
             dcc.Tab(
-                label='Tab three, multiline',
-                value='tab-3', className='custom-tab',
+                label='主力分析',
+                value='tab-3', 
+                className='custom-tab',
                 selected_className='custom-tab--selected'
             ),
             dcc.Tab(
-                label='Tab four',
+                label='股票損益',
                 value='tab-4',
                 className='custom-tab',
                 selected_className='custom-tab--selected'
