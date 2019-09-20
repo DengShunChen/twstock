@@ -104,7 +104,7 @@ def update_graph(tickers):
             bollinger_traces = [{
                 'x': dff['date'], 'y': y,
                 'type': 'scatter', 'mode': 'lines',
-                'line': {'width': 1, 'color': colorscale2[(i*2) % len(colorscale)]},
+                'line': {'width': 1, 'color': colorscale2[(i*2) % len(colorscale2)]},
                 'hoverinfo': 'none',
                 'legendgroup': ticker,
                 'showlegend': True if i == 0 else False,
