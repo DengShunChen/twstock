@@ -19,11 +19,12 @@ import time
 st = StockTools()
 
 # dash 
-app = dash.Dash()
+app = dash.Dash(__name__)
 server = app.server
 
 app.scripts.config.serve_locally = False
 app.config.suppress_callback_exceptions=True
+    
 
 colorscale2 = cl.scales['9']['qual']['Paired']
 colorscale1 = cl.scales['9']['div']['RdYlGn']
@@ -45,32 +46,53 @@ def get_stock(date:str=None):
   select = st.select()
   return select
 
-def benner():
-  ben = [
-      html.H2('Taiwan Stock Tiger',
+benner = [
+      html.H1('台灣股虎',
       style={'display': 'inline',
-         'float': 'left',
-         'font-size': '2.65em',
-         'margin-left': '7px',
+         'float': 'center',
+         'font-size': '2.0em',
+         'margin-left': '0px',
          'font-weight': 'bolder',
          'font-family': 'Product Sans',
-         'color': "rgba(117, 117, 117, 0.95)",
-         'margin-top': '20px',
-         'margin-bottom': '0'
+         'color': "rgba(178, 223, 138, 0.95)",
+         'margin-top': '0px',
+         'margin-bottom': '10px'
          }),
       html.Img(src=logoimgsrc,
-        style={
+        style={'display': 'inline',
           'height': '100px',
           'float': 'right'
-        },
-      )
-  ]
-  return ben
+        }
+      ),
+      html.P(),
+]
+
+TAB_STYLE = {
+    'width': 'inherit',
+    'border': 'none',
+    'boxShadow': 'inset 0px -1px 0px 0px lightgrey',
+    'background': 'white',
+    'paddingTop': 0,
+    'paddingBottom': 0,
+    'height': '42px',
+}
+
+SELECTED_STYLE = {
+    'width': 'inherit',
+    'boxShadow': 'none',
+    'borderLeft': 'none',
+    'borderRight': 'none',
+    'borderTop': 'none',
+    'borderBottom': '2px #004A96 solid',
+    'background': 'lightblue',
+    'paddingTop': 0,
+    'paddingBottom': 0,
+    'height': '42px',
+}
 
 app.layout = html.Div([
-    html.Div(
-      id='tabs-content-classes'
-    ),
+    html.Div(benner),
+    html.Div(id='tabs-content-classes'),
     dcc.Tabs(
         id="tabs-with-classes",
         value='tab-1',
@@ -82,19 +104,27 @@ app.layout = html.Div([
                 value='tab-1',
                 className='custom-tab',
                 selected_className='custom-tab--selected',
+                style=TAB_STYLE,
+                selected_style=SELECTED_STYLE,
                 children=[
-                  html.Div(benner()),
-                  dcc.DatePickerSingle(
-                    id='date-picker-single',
-                    min_date_allowed=dt.datetime(2000, 1, 1),
-                    max_date_allowed=dt.datetime(2100, 12, 31),
-                    initial_visible_month=dt.datetime.now(),
-                    date=dt.datetime.now().strftime('%Y-%m-%d')
-                  ),
-                  dcc.Dropdown(
-                    id='stock-ticker-input',
-                    multi=True
-                  ),
+                  html.Div([
+                    dcc.DatePickerSingle(
+                      id='date-picker-single',
+                      min_date_allowed=dt.datetime(2000, 1, 1),
+                      max_date_allowed=dt.datetime(2100, 12, 31),
+                      initial_visible_month=dt.datetime.now(),
+                      date=dt.datetime.now().strftime('%Y-%m-%d'),
+                      display_format='DD-MMM-YYYY',
+                      clearable=True,
+                      with_portal=True,
+                    ),
+                  ]),
+                  html.Div([
+                    dcc.Dropdown(
+                      id='stock-ticker-input',
+                      multi=True
+                    )
+                  ]),
                   html.Div(id='graphs1')
                 ],
               ),
@@ -103,8 +133,9 @@ app.layout = html.Div([
                 value='tab-2',
                 className='custom-tab',
                 selected_className='custom-tab--selected',
+                style=TAB_STYLE,
+                selected_style=SELECTED_STYLE,
                 children=[
-                  html.Div(benner()),
                   html.Div(id='graphs2')
                 ]
             ),
@@ -113,8 +144,9 @@ app.layout = html.Div([
                 value='tab-3', 
                 className='custom-tab',
                 selected_className='custom-tab--selected',
+                style=TAB_STYLE,
+                selected_style=SELECTED_STYLE,
                 children=[
-                  html.Div(benner()),
                   html.Div(id='graphs3')
                 ]
             ),
@@ -123,13 +155,15 @@ app.layout = html.Div([
                 value='tab-4',
                 className='custom-tab',
                 selected_className='custom-tab--selected',
+                style=TAB_STYLE,
+                selected_style=SELECTED_STYLE,
                 children=[
-                  html.Div(benner()),
                   html.Div(id='graphs4')
                 ]
             ),
-        ])
-])
+        ]
+    )
+],className="container")
 
 st.strdate = dt.datetime.now() - dt.timedelta(days=180)
 
@@ -141,16 +175,17 @@ def bbands(price, window_size=10, num_of_std=5):
     return rolling_mean, upper_band, lower_band
 
 @app.callback(
-    dash.dependencies.Output('stock-ticker-input','options'),
+    [dash.dependencies.Output('stock-ticker-input','options'),
+     dash.dependencies.Output('stock-ticker-input','value')],
     [dash.dependencies.Input('date-picker-single', 'date')])
 def update_ticker(date):
-
     select = get_stock(date)
 
     options = [{'label': 'BUY  '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']]
-    options = options + [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']]
-    
-    return options
+    options = options + [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']]   
+     
+    value = [ select['buy'][0] ]
+    return options, value
 
 @app.callback(
     dash.dependencies.Output('graphs1','children'),
