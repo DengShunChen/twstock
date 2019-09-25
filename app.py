@@ -213,7 +213,7 @@ def update_graph(tickers):
             style={'marginTop': 20, 'marginBottom': 20}
         ))
     else:
-        st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
+        #st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
         st.strdate = st.strdate.strftime('%Y-%m-%d')
 
         for i, ticker in enumerate(tickers):
