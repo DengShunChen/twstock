@@ -214,11 +214,9 @@ def update_graph(tickers):
         ))
     else:
         #st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
-        #st.strdate = st.strdate.strftime('%Y-%m-%d')
-
+        print(st.strdate,st.enddate)
         for i, ticker in enumerate(tickers):
 
-            #dff = df[df['Stock'] == ticker]
             dff = st.read_stock(ticker)
 
             candlestick = [{
