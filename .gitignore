@@ -104,4 +104,7 @@ ENV/
 *.ipynb
 
 *.pdf
+
+downloaded
+logs.txt
 *.png
