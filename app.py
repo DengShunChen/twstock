@@ -15,8 +15,6 @@ import time
 #    __name__, 
 #    assets_external_scripts='https://cdn.plot.ly/plotly-finance-1.28.0.min.js'
 #)
-# Stocks
-st = StockTools()
 
 # dash 
 app = dash.Dash(__name__)
@@ -32,19 +30,6 @@ colorscale1 = cl.scales['11']['div']['RdYlGn']
 logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
 logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
 logoimgsrc = "https://st2.depositphotos.com/5486388/8173/v/950/depositphotos_81739398-stock-illustration-tiger-logo-template.jpg"
-
-def get_stock(date:str=None):
-  if date == None:
-    st.strdate = dt.datetime.now() - dt.timedelta(days=31)
-    st.strdate = st.strdate.strftime('%Y-%m-%d')
-    st.enddate = dt.datetime.now().strftime('%Y-%m-%d')
-  else:
-    st.strdate = dt.datetime.strptime(date,'%Y-%m-%d') - dt.timedelta(days=31)
-    st.strdate = st.strdate.strftime('%Y-%m-%d')
-    st.enddate = date        
-    print(st.strdate,st.enddate) 
-  select = st.select()
-  return select
 
 benner = [
       html.H1('台灣股虎',
@@ -108,17 +93,28 @@ app.layout = html.Div([
                 selected_style=SELECTED_STYLE,
                 children=[
                   html.Div([
+                    html.Div('資料日期：',style={'display': 'inline'}),
+                    dcc.DatePickerRange(
+                      id='date-picker-range1',
+                      min_date_allowed=dt.datetime(2000, 1, 1),
+                      max_date_allowed=dt.datetime(2100, 12, 31),
+                      initial_visible_month=dt.datetime.now(),
+                      display_format='M-D-Y',
+                      end_date=dt.datetime.now(),
+                      start_date=dt.datetime.now() - dt.timedelta(days=180) 
+                    ),
+                    html.Div('  選股日期:',style={'display': 'inline'}),
                     dcc.DatePickerSingle(
                       id='date-picker-single1',
                       min_date_allowed=dt.datetime(2000, 1, 1),
                       max_date_allowed=dt.datetime(2100, 12, 31),
                       initial_visible_month=dt.datetime.now(),
-                      date=dt.datetime.now().strftime('%Y-%m-%d'),
-                      display_format='DD-MMM-YYYY',
-                      clearable=True,
-                      with_portal=True,
+                      display_format='M-D-Y',
+                      date=dt.datetime.now(),
+                      style={'display': 'inline'},
                     ),
                   ]),
+                  html.Hr(),
                   html.Div([
                     dcc.Dropdown(
                       id='stock-ticker-input',
@@ -137,15 +133,34 @@ app.layout = html.Div([
                 selected_style=SELECTED_STYLE,
                 children=[ 
                   html.Div([
+                    html.Div('資料日期：',style={'display': 'inline'}),
                     dcc.DatePickerRange(
                       id='date-picker-range2',
                       min_date_allowed=dt.datetime(2000, 1, 1),
                       max_date_allowed=dt.datetime(2100, 12, 31),
                       initial_visible_month=dt.datetime.now(),
-                      end_date=dt.datetime.now()
+                      display_format='M-D-Y',
+                      end_date=dt.datetime.now(),
+                      start_date=dt.datetime.now() - dt.timedelta(days=180) 
                     ),
-                ]),
-                  dcc.Input(id="input2", type="text", placeholder="輸入股號", debounce=True),
+                    html.Div('  股號:',style={'display': 'inline'}),
+                    dcc.Input(
+                      id="input2", 
+                      type="text", 
+                      placeholder="輸入股號", 
+                      debounce=True,
+                      style={'width': '120px', 
+                             'height':'40px',
+                             'font-size': 
+                             '1.0em',
+                             'margin-top': '0px',
+                             'margin-bottom': '0px',
+                             'paddingTop': 0,
+                             'paddingBottom': 0,
+                      },
+                    ),
+                  ]),
+                  html.Hr(),
                   html.Div(id='graphs2')
                 ]
             ),
@@ -157,6 +172,10 @@ app.layout = html.Div([
                 style=TAB_STYLE,
                 selected_style=SELECTED_STYLE,
                 children=[
+                  html.H3(
+                    "施工中...。",
+                    style={'marginTop': 20, 'marginBottom': 20}
+                  ),
                   html.Div(id='graphs3')
                 ]
             ),
@@ -168,6 +187,10 @@ app.layout = html.Div([
                 style=TAB_STYLE,
                 selected_style=SELECTED_STYLE,
                 children=[
+                  html.H3(
+                    "施工中...。",
+                    style={'marginTop': 20, 'marginBottom': 20}
+                  ),
                   html.Div(id='graphs4')
                 ]
             ),
@@ -179,6 +202,10 @@ app.layout = html.Div([
                 style=TAB_STYLE,
                 selected_style=SELECTED_STYLE,
                 children=[
+                  html.H3(
+                    "施工中...。",
+                    style={'marginTop': 20, 'marginBottom': 20}
+                  ),
                   html.Div(id='graphs5')
                 ]
             ),
@@ -186,7 +213,23 @@ app.layout = html.Div([
     )
 ],className="container")
 
-st.strdate = dt.datetime.now() - dt.timedelta(days=180)
+# Stocks
+st = StockTools()
+
+def get_stock(date:str=None):
+
+  if date == None:
+    start_date = dt.datetime.now() - dt.timedelta(days=31)
+    st.strdate = start_date.strftime('%Y-%m-%d')
+    st.enddate = dt.datetime.now().strftime('%Y-%m-%d')
+  else:
+    start_date = dt.datetime.strptime(date,'%Y-%m-%d') - dt.timedelta(days=31)
+    st.strdate = start_date.strftime('%Y-%m-%d')
+    st.enddate = date
+    print(st.strdate,st.enddate) 
+  select = st.select()
+  
+  return select
 
 def bbands(price, window_size=10, num_of_std=5):
     rolling_mean = price.rolling(window=window_size).mean()
@@ -263,8 +306,12 @@ def stock_figure(ticker):
      dash.dependencies.Output('stock-ticker-input','value')],
     [dash.dependencies.Input('date-picker-single1', 'date')])
 def update_ticker(date):
-    select = get_stock(date)
 
+    if date is not None:
+      date = date[0:10]
+    
+    select = get_stock(date)
+    
     options = [{'label': 'BUY  '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']]
     options = options + [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']]   
     value = []
@@ -276,20 +323,25 @@ def update_ticker(date):
 
 @app.callback(
     dash.dependencies.Output('graphs1','children'),
-    [dash.dependencies.Input('stock-ticker-input', 'value')])
-def update_graph(tickers):
+    [dash.dependencies.Input('stock-ticker-input', 'value'),
+     dash.dependencies.Input('date-picker-range1', 'start_date'),
+     dash.dependencies.Input('date-picker-range1', 'end_date')])
+def update_graph(tickers,start_date, end_date):
     graphs = []
 
     if not tickers:
         graphs.append(html.H3(
-            "Select a stock ticker.",
+            "選股中...",
             style={'marginTop': 20, 'marginBottom': 20}
         ))
     else:
-        date = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
-        st.strdate = date.strftime('%Y-%m-%d')
-        for i, ticker in enumerate(tickers):
-            graphs.append(stock_figure(ticker))
+      if start_date is not None:
+        st.strdate = start_date[0:10]
+      if end_date is not None:
+        st.enddate = end_date[0:10]
+
+      for i, ticker in enumerate(tickers):
+        graphs.append(stock_figure(ticker))
 
     return graphs
 
@@ -307,9 +359,9 @@ def update_output(start_date, end_date, stockid):
         ))
     else:
       if start_date is not None:
-        st.strdate = start_date
+        st.strdate = start_date[0:10]
       if end_date is not None:
-        st.enddate = end_date
+        st.enddate = end_date[0:10]
       graphs.append(stock_figure(stockid))
       
     return graphs
