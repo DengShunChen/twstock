@@ -202,13 +202,13 @@ class StockTools(object):
     if self.stock_pd.shape[0] == 0:
       raise DataEmptyError
 
-    self.ma03 = self.stock_pd.rolling(3).mean()
-    self.ma05 = self.stock_pd.rolling(5).mean()
-    self.ma08 = self.stock_pd.rolling(8).mean()
-    self.ma20 = self.stock_pd.rolling(20).mean()
-    self.ma60 = self.stock_pd.rolling(60).mean()
+    ma03 = self.stock_pd.rolling(3).mean()
+    ma05 = self.stock_pd.rolling(5).mean()
+    ma08 = self.stock_pd.rolling(8).mean()
+    ma20 = self.stock_pd.rolling(20).mean()
+    ma60 = self.stock_pd.rolling(60).mean()
    
-    self.ma_pd = pd.concat([self.ma03['close'],self.ma05['close'],self.ma08['close'],self.ma20['close'],self.ma60['close']],axis=1)
+    self.ma_pd = pd.concat([ma03['close'],ma05['close'],ma08['close'],ma20['close'],ma60['close']],axis=1)
     self.ma_pd.columns=['ma03','ma05','ma08','ma20','ma60']
     self.ma_std  = self.ma_pd.loc[:,['ma03','ma05','ma08']].std(axis=1) 
     self.ma_mean = self.ma_pd.loc[:,['ma03','ma05','ma08']].mean(axis=1)
@@ -241,11 +241,11 @@ class StockTools(object):
     ax1.set_xlabel('日期')
     ax1.set_ylabel('價格（每股）')
 
-    ax1.plot(self.ma03.close, '-' , label="3日均價",zorder=10, linewidth=2)
-    ax1.plot(self.ma05.close, '-' , label="5日均價",zorder=10, linewidth=2)
-    ax1.plot(self.ma08.close, '-' , label="8日均價",zorder=10, linewidth=2)
-    ax1.plot(self.ma20.close, '-' , label="20日均價",zorder=10, linewidth=2)
-    ax1.plot(self.ma60.close, '-' , label="60日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma_pd.ma03, '-' , label="3日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma_pd.ma05, '-' , label="5日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma_pd.ma08, '-' , label="8日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma_pd.ma20, '-' , label="20日均價",zorder=10, linewidth=2)
+    ax1.plot(self.ma_pd.ma60, '-' , label="60日均價",zorder=10, linewidth=2)
     ax1.plot(self.stock_pd.close, '-' , label="收盤價",color='k',zorder=10, linewidth=2.4)
     ax1.tick_params(axis='y', labelcolor='k')
     ax1.legend(loc='best')
@@ -318,8 +318,7 @@ class StockTools(object):
           selected_sids['sell'].append(sid)
     print('有效日期：',self.lastdate)
     print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
-    print(buy)
-    print(sell)
+    print(buy + sell)
     return selected_sids
 
 if __name__ == '__main__':

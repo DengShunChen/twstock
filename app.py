@@ -218,15 +218,12 @@ st = StockTools()
 
 def get_stock(date:str=None):
 
-  if date == None:
-    start_date = dt.datetime.now() - dt.timedelta(days=31)
-    st.strdate = start_date.strftime('%Y-%m-%d')
-    st.enddate = dt.datetime.now().strftime('%Y-%m-%d')
-  else:
-    start_date = dt.datetime.strptime(date,'%Y-%m-%d') - dt.timedelta(days=31)
-    st.strdate = start_date.strftime('%Y-%m-%d')
-    st.enddate = date
-    print(st.strdate,st.enddate) 
+  start_date = dt.datetime.strptime(date,'%Y-%m-%d') - dt.timedelta(days=31)
+  st.strdate = start_date.strftime('%Y-%m-%d')
+
+  st.enddate = date
+  print(st.strdate,st.enddate) 
+
   select = st.select()
   
   return select
