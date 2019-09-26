@@ -4,8 +4,7 @@ from datetime import datetime
 
 today = datetime.now().strftime('%Y-%m-%d')
 st = StockTools(today)
-logfile = '/home/pi/twstocktiger/downloaded'
-print('i am in')
+logfile = '/home/pi/twstocktiger/downloaded.txt'
 def update():
   saved_stock = []
   with open(logfile,'r') as f:
