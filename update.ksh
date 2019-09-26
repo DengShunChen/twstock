@@ -11,7 +11,8 @@ touch downloaded.txt
 
 /usr/bin/python /home/pi/twstocktiger/download_stock.py > /home/pi/twstocktiger/logs.txt
 
-git add .
+git pull
+git add stocksdb/*
 git commit -am "$message"
 git push heroku master
 
