@@ -199,6 +199,8 @@ class StockTools(object):
       timestamp = ''
       
     self.stock_pd = self.stock_pd.set_index('date')
+    if self.stock_pd.shape[0] == 0:
+      raise DataEmptyError
 
     self.ma03 = self.stock_pd.rolling(3).mean()
     self.ma05 = self.stock_pd.rolling(5).mean()
@@ -214,6 +216,13 @@ class StockTools(object):
     self.name = self.twse[sid].name
     self.id = int(sid)
     self.timestamp = timestamp 
+    self.stock_pd[['capacity']] = self.stock_pd[['capacity']] /1000
+
+    #data['slop'] = 0.5*(stock_pd['close'].iloc[-1] - stock_pd['close'].iloc[-3])
+    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-2])
+    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-3])
+    self.slop = 0.5*(self.ma_pd.ma05.iloc[-1] - self.ma_pd.ma05.iloc[-2])
+    self.nstdslop = 0.5*(self.norstd.iloc[-1] - self.norstd.iloc[-2])
 
   def plot(self,sid:str,real=False,buyprice:float=None):
 
@@ -257,7 +266,7 @@ class StockTools(object):
     ax3 = ax1.twinx()
     ax3.set_ylabel('成交量(張)',color='g')
     ax3.tick_params(axis='y', labelcolor='g')
-    ax3.bar(self.stock_pd.index,self.stock_pd.capacity.div(1000), width=1.2,label="成交量",color='g',alpha=0.3, zorder=0)
+    ax3.bar(self.stock_pd.index,self.stock_pd.capacity, width=1.2,label="成交量",color='g',alpha=0.3, zorder=0)
     #ax3.legend(loc='upper center')
 
     fig.autofmt_xdate()
@@ -271,37 +280,6 @@ class StockTools(object):
 
     plt.show()
 
-  def _get_info(self,sid:str):
-    stock_pd = self.read_stock(sid)
-    stock_pd = stock_pd.set_index('date')
-    if stock_pd.shape[0] == 0:
-      raise DataEmptyError
-
-    stock_ma03 = stock_pd.rolling(3).mean()
-    stock_ma05 = stock_pd.rolling(5).mean()
-    stock_ma08 = stock_pd.rolling(8).mean()
-    stock_ma20 = stock_pd.rolling(20).mean()
-
-    data = pd.concat([stock_ma03['close'],stock_ma05['close'],stock_ma08['close']],axis=1)
-    std = data.std(axis=1)
-    mean = data.mean(axis=1)
-
-    close = stock_pd[['close']]
-    capacity = stock_pd[['capacity']] /1000
-
-    data = {}
-    data['norstd'] = std / mean
-    data['close'] = close
-    data['capacity'] = capacity
-    data['ma20'] = stock_ma20['close']
-    #data['slop'] = 0.5*(stock_pd['close'].iloc[-1] - stock_pd['close'].iloc[-3])
-    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-2])
-    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-3])
-    data['slop'] = 0.5*(stock_ma05['close'].iloc[-1] - stock_ma05['close'].iloc[-2])
-    data['nstdslop'] = 0.5*(data['norstd'].iloc[-1] - data['norstd'].iloc[-2])
-
-    return data
-
   def select(self):
 
     buy=''
@@ -312,30 +290,30 @@ class StockTools(object):
     for sid in self.sids:
       # 讀取資料
       try:
-        data = self._get_info(sid)
+        self._stock_anal(sid)
       except:
         continue
         #print('%-8s %-4s Calculate failed'%(twse[sid].name,sid))
 
       # 必要篩選條件
-      bound = data['capacity'].iloc[-1] > self.capacity_bound
-      if data['norstd'][-1] < self.threshold and bound['capacity'] and data['nstdslop'] > 0 :
+      bound = self.stock_pd.capacity.iloc[-1] > self.capacity_bound
+      if self.norstd[-1] < self.threshold and bound and self.nstdslop > 0 :
         # 爆大量分析
-        capacond = data['capacity'].iloc[-1] > self.bigcapa_factor * data['capacity'].iloc[-2]
-        if capacond['capacity']:
+        capacond = self.stock_pd.capacity.iloc[-1] > self.bigcapa_factor * self.stock_pd.capacity.iloc[-2]
+        if capacond:
           capamark='爆大量'
         else:
           capamark=''
 
         # 股票基本資訊
-        stockinfo = '%4.4s %6.5f %6.2f %7.2f %6d %-8.8s %3s'% (sid,data['norstd'][-1],data['close'].iloc[-1], \
-                data['ma20'].iloc[-1],data['capacity'].iloc[-1],self.twse[sid].name,capamark)
+        stockinfo = '%4.4s %6.5f %6.2f %7.2f %6d %-8.8s %3s'% (sid,self.norstd[-1],self.stock_pd.close.iloc[-1], \
+                self.ma_pd.ma20.iloc[-1],self.stock_pd.capacity.iloc[-1],self.twse[sid].name,capamark)
         # 股票篩選機制
-        ma20diff = data['close'].iloc[-1] - data['ma20'].iloc[-1]
-        if   ma20diff['close'] > 0 and ma20diff['close'] <  self.ma20_factor*data['ma20'][-1] and data['slop'] > 0:
+        ma20diff = self.stock_pd.close.iloc[-1] - self.ma_pd.ma20.iloc[-1]
+        if   ma20diff > 0 and ma20diff <  self.ma20_factor * self.ma_pd.ma20[-1] and self.slop > 0:
           buy  =  buy + ' BUY: ' + stockinfo + '\n'
           selected_sids['buy'].append(sid)
-        elif ma20diff['close'] < 0 and ma20diff['close'] > -self.ma20_factor*data['ma20'][-1] and data['slop'] < 0:
+        elif ma20diff < 0 and ma20diff > -self.ma20_factor * self.ma_pd.ma20[-1] and self.slop < 0:
           sell = sell + 'SELL: ' + stockinfo + '\n'
           selected_sids['sell'].append(sid)
     print('有效日期：',self.lastdate)

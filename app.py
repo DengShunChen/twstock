@@ -26,12 +26,12 @@ app.scripts.config.serve_locally = False
 app.config.suppress_callback_exceptions=True
 app.title = 'Tiger'    
 
-colorscale2 = cl.scales['9']['qual']['Paired']
-colorscale1 = cl.scales['9']['div']['RdYlGn']
+colorscale2 = cl.scales['12']['qual']['Paired']
+colorscale1 = cl.scales['11']['div']['RdYlGn']
 
-#df = pd.read_csv('https://raw.githubusercontent.com/plotly/datasets/master/dash-stock-ticker-demo.csv')
 logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
 logoimgsrc = "https://www.sccpre.cat/mypng/full/69-695057_background-images-hd-picsart-png-tiger-logo-clip.png"
+logoimgsrc = "https://st2.depositphotos.com/5486388/8173/v/950/depositphotos_81739398-stock-illustration-tiger-logo-template.jpg"
 
 def get_stock(date:str=None):
   if date == None:
@@ -109,7 +109,7 @@ app.layout = html.Div([
                 children=[
                   html.Div([
                     dcc.DatePickerSingle(
-                      id='date-picker-single',
+                      id='date-picker-single1',
                       min_date_allowed=dt.datetime(2000, 1, 1),
                       max_date_allowed=dt.datetime(2100, 12, 31),
                       initial_visible_month=dt.datetime.now(),
@@ -135,7 +135,17 @@ app.layout = html.Div([
                 selected_className='custom-tab--selected',
                 style=TAB_STYLE,
                 selected_style=SELECTED_STYLE,
-                children=[
+                children=[ 
+                  html.Div([
+                    dcc.DatePickerRange(
+                      id='date-picker-range2',
+                      min_date_allowed=dt.datetime(2000, 1, 1),
+                      max_date_allowed=dt.datetime(2100, 12, 31),
+                      initial_visible_month=dt.datetime.now(),
+                      end_date=dt.datetime.now()
+                    ),
+                ]),
+                  dcc.Input(id="input2", type="text", placeholder="輸入股號", debounce=True),
                   html.Div(id='graphs2')
                 ]
             ),
@@ -185,10 +195,73 @@ def bbands(price, window_size=10, num_of_std=5):
     lower_band = rolling_mean - (rolling_std*num_of_std)
     return rolling_mean, upper_band, lower_band
 
+def stock_figure(ticker):
+
+    dff = st.read_stock(ticker)
+    st._stock_anal(ticker)
+
+    candlestick = [{
+        'x': dff['date'],
+        'open': dff['open'],
+        'high': dff['high'],
+        'low': dff['low'],
+        'close': dff['close'],
+        'type': 'candlestick',
+        'name': ticker + ' ' +st.twse[ticker].name,
+        'legendgroup': ticker + 'price',
+        'increasing': {'line': {'color': colorscale1[0]}},
+        'decreasing': {'line': {'color': colorscale1[-1]}}
+    }]
+   #bb_bands = bbands(dff.close)
+   #bollinger_traces = [{
+   #    'x': dff['date'], 'y': y,
+   #    'type': 'scatter', 'mode': 'lines',
+   #    'line': {'width': 1.3, 'color': colorscale2[(i*2) % len(colorscale2)]},
+   #    'hoverinfo': 'y',
+   #    'legendgroup': ticker + 'anal',
+   #    'showlegend': True if i==0 False,
+   #    'name': '{} - {}'.format(ticker,'bollinger')
+   #} for i, y in enumerate(bb_bands)]
+    ma_list = ['ma03','ma05','ma08','ma20','ma60']
+    ma_traces = [{
+        'x': dff['date'], 'y': st.ma_pd[ma],
+        'type': 'scatter', 'mode': 'lines',
+        'line': {'width': 1.5, 'color': colorscale2[(i*2) % len(colorscale2)]},
+        'hoverinfo': 'name+y',
+        'legendgroup': ticker + 'anal',
+        'showlegend': True,
+        'name': '{}'.format(ma)
+    } for i, ma in enumerate(ma_list)]
+    variation = [{
+        'x': dff['date'], 'y': st.norstd,
+        'type': 'scatter', 'mode': 'lines',
+        'line': {'width': 1, 'color': colorscale2[2]},
+        'hoverinfo': 'y',
+        'legendgroup': ticker + 'norstd',
+        'showlegend': True,
+        'name': '{}'.format('變異係數'),
+        'yaxis':'y2'
+    }]
+
+    graph = dcc.Graph(
+          id=ticker,
+          figure={
+            'data': candlestick + ma_traces + variation,
+            'layout': {
+                'margin': {'b': 0, 'r': 60, 'l': 60, 't': 0},
+                'legend': {'x': 0},
+                'yaxis' : {'title':"價格"},
+                'yaxis2': {'title':"變異係數",'anchor':"x",'overlaying':"y",'side':"right"}
+            }
+          }
+      )
+
+    return graph
+
 @app.callback(
     [dash.dependencies.Output('stock-ticker-input','options'),
      dash.dependencies.Output('stock-ticker-input','value')],
-    [dash.dependencies.Input('date-picker-single', 'date')])
+    [dash.dependencies.Input('date-picker-single1', 'date')])
 def update_ticker(date):
     select = get_stock(date)
 
@@ -213,49 +286,33 @@ def update_graph(tickers):
             style={'marginTop': 20, 'marginBottom': 20}
         ))
     else:
-        #st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
-        print(st.strdate,st.enddate)
+        date = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
+        st.strdate = date.strftime('%Y-%m-%d')
         for i, ticker in enumerate(tickers):
-
-            dff = st.read_stock(ticker)
-
-            candlestick = [{
-                'x': dff['date'],
-                'open': dff['open'],
-                'high': dff['high'],
-                'low': dff['low'],
-                'close': dff['close'],
-                'type': 'candlestick',
-                'name': ticker + ' ' +st.twse[ticker].name,
-                'legendgroup': st.twse[ticker].name,
-                'increasing': {'line': {'color': colorscale1[0]}},
-                'decreasing': {'line': {'color': colorscale1[-1]}}
-            }]
-            bb_bands = bbands(dff.close)
-            bollinger_traces = [{
-                'x': dff['date'], 'y': y,
-                'type': 'scatter', 'mode': 'lines',
-                'line': {'width': 1, 'color': colorscale2[(i*2) % len(colorscale2)]},
-                'hoverinfo': 'none',
-                'legendgroup': ticker,
-                'showlegend': True if i == 0 else False,
-                'name': '{} - bollinger bands'.format(ticker)
-            } for i, y in enumerate(bb_bands)]
-            graphs.append(
-                dcc.Graph(
-                  id=ticker,
-                  figure={
-                    'data': candlestick + bollinger_traces,
-                    'layout': {
-                        'margin': {'b': 0, 'r': 10, 'l': 60, 't': 0},
-                        'legend': {'x': 0}
-                    }
-                  }
-                )
-            )
+            graphs.append(stock_figure(ticker))
 
     return graphs
 
+@app.callback(
+    dash.dependencies.Output('graphs2', 'children'),
+    [dash.dependencies.Input('date-picker-range2', 'start_date'),
+     dash.dependencies.Input('date-picker-range2', 'end_date'),
+     dash.dependencies.Input('input2', 'value')])
+def update_output(start_date, end_date, stockid):
+    graphs = []
+    if start_date is None or end_date is None or stockid is None:
+        graphs.append(html.H3(
+            "請選擇正確的日期，且輸入股號。",
+            style={'marginTop': 20, 'marginBottom': 20}
+        ))
+    else:
+      if start_date is not None:
+        st.strdate = start_date
+      if end_date is not None:
+        st.enddate = end_date
+      graphs.append(stock_figure(stockid))
+      
+    return graphs
 
 if __name__ == '__main__':
     app.run_server(debug=True)
