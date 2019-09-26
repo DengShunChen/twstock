@@ -89,7 +89,8 @@ class StockTools(object):
     self.enddate = enddate
 
     self.threshold = 0.002
-    self.ma20_factor = 0.01        # 10% make sure the price just over/below ma20
+    #self.ma20_factor = 0.01        # 10% make sure the price just over/below ma20
+    self.ma20_factor = 0.02        # 10% make sure the price just over/below ma20
     self.capacity_bound = 2000
     self.bigcapa_factor = 1.5
 
@@ -294,7 +295,10 @@ class StockTools(object):
     data['capacity'] = capacity
     data['ma20'] = stock_ma20['close']
     #data['slop'] = 0.5*(stock_pd['close'].iloc[-1] - stock_pd['close'].iloc[-3])
-    data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-2])
+    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-2])
+    #data['slop'] = 0.5*(stock_ma03['close'].iloc[-1] - stock_ma03['close'].iloc[-3])
+    data['slop'] = 0.5*(stock_ma05['close'].iloc[-1] - stock_ma05['close'].iloc[-2])
+    data['nstdslop'] = 0.5*(data['norstd'].iloc[-1] - data['norstd'].iloc[-2])
 
     return data
 
@@ -315,7 +319,7 @@ class StockTools(object):
 
       # 必要篩選條件
       bound = data['capacity'].iloc[-1] > self.capacity_bound
-      if data['norstd'][-1] < self.threshold and bound['capacity']:
+      if data['norstd'][-1] < self.threshold and bound['capacity'] and data['nstdslop'] > 0 :
         # 爆大量分析
         capacond = data['capacity'].iloc[-1] > self.bigcapa_factor * data['capacity'].iloc[-2]
         if capacond['capacity']:

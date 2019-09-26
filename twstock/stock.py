@@ -29,7 +29,11 @@ TWSE_BASE_URL = 'http://www.twse.com.tw/'
 TPEX_BASE_URL = 'http://www.tpex.org.tw/'
 DATATUPLE = namedtuple('Data', ['date', 'capacity', 'turnover', 'open',
                                 'high', 'low', 'close', 'change', 'transaction'])
-headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36'}
+headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.14; rv:69.0) Gecko/20100101 Firefox/69.0',
+           'Accept': 'application/json, text/javascript, */*; q=0.01',
+           'Accept-Encoding':'gzip, deflate, br',
+           'Accept-Language':'zh-TW,zh;q=0.8,en-US;q=0.5,en;q=0.3',
+           'Connection':'keep-alive' }
 
 class BaseFetcher(object):
     def fetch(self, year, month, sid, retry):

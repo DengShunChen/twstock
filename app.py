@@ -24,7 +24,7 @@ server = app.server
 
 app.scripts.config.serve_locally = False
 app.config.suppress_callback_exceptions=True
-    
+app.title = 'Tiger'    
 
 colorscale2 = cl.scales['9']['qual']['Paired']
 colorscale1 = cl.scales['9']['div']['RdYlGn']
@@ -161,6 +161,17 @@ app.layout = html.Div([
                   html.Div(id='graphs4')
                 ]
             ),
+            dcc.Tab(
+                label='出場警示',
+                value='tab-5',
+                className='custom-tab',
+                selected_className='custom-tab--selected',
+                style=TAB_STYLE,
+                selected_style=SELECTED_STYLE,
+                children=[
+                  html.Div(id='graphs5')
+                ]
+            ),
         ]
     )
 ],className="container")
@@ -183,8 +194,11 @@ def update_ticker(date):
 
     options = [{'label': 'BUY  '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['buy']]
     options = options + [{'label': 'SELL '+s+' '+st.twse[s].name, 'value': str(s)} for s in select['sell']]   
-     
-    value = [ select['buy'][0] ]
+    value = []
+    if len(select['sell']) != 0: 
+      value = [ select['sell'][0] ]
+    if len(select['buy']) != 0: 
+      value = [ select['buy'][0] ]
     return options, value
 
 @app.callback(
@@ -199,12 +213,10 @@ def update_graph(tickers):
             style={'marginTop': 20, 'marginBottom': 20}
         ))
     else:
-        st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
-        st.strdate = st.strdate.strftime('%Y-%m-%d')
-
+        #st.strdate = dt.datetime.strptime(st.enddate,'%Y-%m-%d') - dt.timedelta(days=180)
+        print(st.strdate,st.enddate)
         for i, ticker in enumerate(tickers):
 
-            #dff = df[df['Stock'] == ticker]
             dff = st.read_stock(ticker)
 
             candlestick = [{
