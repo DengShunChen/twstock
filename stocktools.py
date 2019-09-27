@@ -286,7 +286,7 @@ class StockTools(object):
     with open('seleted_stocks.json', 'r') as f:
       selected_json = json.load(f)
    
-    if st.enddate not in selected_json.keys(): 
+    if self.enddate not in selected_json.keys(): 
       buy='' ; sell=''
       selected_sids = {} ; selected_sids['buy'] = [] ; selected_sids['sell'] = []
       for sid in self.sids:
@@ -322,11 +322,11 @@ class StockTools(object):
       print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
       print(buy + sell)
 
-      selected_json[st.enddate] = selected_sids
+      selected_json[self.enddate] = selected_sids
       with open('seleted_stocks.json', 'w') as f:
         json.dump(selected_json, f)
     else:
-      selected_sids = selected_json[st.enddate]
+      selected_sids = selected_json[self.enddate]
     
     print(selected_sids)
     return selected_sids
