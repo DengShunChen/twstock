@@ -20,8 +20,8 @@ import time
 app = dash.Dash(__name__)
 server = app.server
 
-#app.scripts.config.serve_locally = False
-#app.config.suppress_callback_exceptions=True
+app.scripts.config.serve_locally = False
+app.config.suppress_callback_exceptions=True
 app.title = 'Tiger'    
 
 colorscale2 = cl.scales['12']['qual']['Paired']
