@@ -9,6 +9,7 @@ import os
 import sys
 from pandas.plotting import register_matplotlib_converters
 import matplotlib.pyplot as plt
+import json
 
 class StockTools(object):
 
@@ -282,45 +283,54 @@ class StockTools(object):
 
   def select(self):
 
-    buy=''
-    sell=''
-    selected_sids = {}
-    selected_sids['buy'] = []
-    selected_sids['sell'] = []
-    for sid in self.sids:
-      # 讀取資料
-      try:
-        self._stock_anal(sid)
-      except:
-        continue
-        #print('%-8s %-4s Calculate failed'%(twse[sid].name,sid))
+    with open('seleted_stocks.json', 'r') as f:
+      selected_json = json.load(f)
+   
+    if st.enddate not in selected_json.keys(): 
+      buy='' ; sell=''
+      selected_sids = {} ; selected_sids['buy'] = [] ; selected_sids['sell'] = []
+      for sid in self.sids:
+        # 讀取資料
+        try:
+          self._stock_anal(sid)
+        except:
+          continue
+          #print('%-8s %-4s Calculate failed'%(twse[sid].name,sid))
+ 
+        # 必要篩選條件
+        bound = self.stock_pd.capacity.iloc[-1] > self.capacity_bound
+        if self.norstd[-1] < self.threshold and bound and self.nstdslop > 0 :
+          # 爆大量分析
+          capacond = self.stock_pd.capacity.iloc[-1] > self.bigcapa_factor * self.stock_pd.capacity.iloc[-2]
+          if capacond:
+            capamark='爆大量'
+          else:
+            capamark=''
+ 
+          # 股票基本資訊
+          stockinfo = '%4.4s %6.5f %6.2f %7.2f %6d %-8.8s %3s'% (sid,self.norstd[-1],self.stock_pd.close.iloc[-1], \
+                  self.ma_pd.ma20.iloc[-1],self.stock_pd.capacity.iloc[-1],self.twse[sid].name,capamark)
+          # 股票篩選機制
+          ma20diff = self.stock_pd.close.iloc[-1] - self.ma_pd.ma20.iloc[-1]
+          if   ma20diff > 0 and ma20diff <  self.ma20_factor * self.ma_pd.ma20[-1] and self.slop > 0:
+            buy  =  buy + ' BUY: ' + stockinfo + '\n'
+            selected_sids['buy'].append(sid)
+          elif ma20diff < 0 and ma20diff > -self.ma20_factor * self.ma_pd.ma20[-1] and self.slop < 0:
+            sell = sell + 'SELL: ' + stockinfo + '\n'
+            selected_sids['sell'].append(sid)
+      print('有效日期：',self.lastdate)
+      print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
+      print(buy + sell)
 
-      # 必要篩選條件
-      bound = self.stock_pd.capacity.iloc[-1] > self.capacity_bound
-      if self.norstd[-1] < self.threshold and bound and self.nstdslop > 0 :
-        # 爆大量分析
-        capacond = self.stock_pd.capacity.iloc[-1] > self.bigcapa_factor * self.stock_pd.capacity.iloc[-2]
-        if capacond:
-          capamark='爆大量'
-        else:
-          capamark=''
-
-        # 股票基本資訊
-        stockinfo = '%4.4s %6.5f %6.2f %7.2f %6d %-8.8s %3s'% (sid,self.norstd[-1],self.stock_pd.close.iloc[-1], \
-                self.ma_pd.ma20.iloc[-1],self.stock_pd.capacity.iloc[-1],self.twse[sid].name,capamark)
-        # 股票篩選機制
-        ma20diff = self.stock_pd.close.iloc[-1] - self.ma_pd.ma20.iloc[-1]
-        if   ma20diff > 0 and ma20diff <  self.ma20_factor * self.ma_pd.ma20[-1] and self.slop > 0:
-          buy  =  buy + ' BUY: ' + stockinfo + '\n'
-          selected_sids['buy'].append(sid)
-        elif ma20diff < 0 and ma20diff > -self.ma20_factor * self.ma_pd.ma20[-1] and self.slop < 0:
-          sell = sell + 'SELL: ' + stockinfo + '\n'
-          selected_sids['sell'].append(sid)
-    print('有效日期：',self.lastdate)
-    print('%3s %3s%6s%6s%6s%5s%3s'%('買賣','股號','離散度','股價','20日均價','成交量','股名'))
-    print(buy + sell)
+      selected_json[st.enddate] = selected_sids
+      with open('seleted_stocks.json', 'w') as f:
+        json.dump(selected_json, f)
+    else:
+      selected_sids = selected_json[st.enddate]
+    
+    print(selected_sids)
     return selected_sids
 
 if __name__ == '__main__':
-  st = StockTools('2018-06-01','2018-12-31')
-#  st.fetch_all()
+  st = StockTools('2019-01-01','2019-02-01')
+  st.select()
