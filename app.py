@@ -124,7 +124,7 @@ app.layout = html.Div([
                       on=False,
                       color='#FF5E5E',
                       size=45,
-                      style={'display':'inline','float': 'right','margin-right': '360px'},
+                      style={'display':'inline','float': 'right','margin-right': '350px'},
                     ),
                   ]),
                   dcc.Dropdown(
