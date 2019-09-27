@@ -4,7 +4,6 @@ import dash
 import dash_daq as daq
 import dash_core_components as dcc
 import dash_html_components as html
-
 import colorlover as cl
 import datetime as dt
 import flask
@@ -21,8 +20,8 @@ import time
 app = dash.Dash(__name__)
 server = app.server
 
-app.scripts.config.serve_locally = False
-app.config.suppress_callback_exceptions=True
+#app.scripts.config.serve_locally = False
+#app.config.suppress_callback_exceptions=True
 app.title = 'Tiger'    
 
 colorscale2 = cl.scales['12']['qual']['Paired']
@@ -300,13 +299,15 @@ def stock_figure(ticker):
 
     graph = dcc.Graph(
           id=ticker,
+          animate=True,
           figure={
             'data': candlestick + ma_traces + variation,
             'layout': {
-                'margin': {'b': 0, 'r': 60, 'l': 60, 't': 0},
+                'margin': {'b':60, 'r': 60, 'l': 60, 't': 0},
                 'legend': {'x': 0},
                 'yaxis' : {'title':"價格"},
-                'yaxis2': {'title':"變異係數",'anchor':"x",'overlaying':"y",'side':"right"}
+                'yaxis2': {'title':"變異係數",'anchor':"x",'overlaying':"y",'side':"right"},
+                'xaxis' : {'rangeslider' : {'visible' : False}}
             }
           }
       )
