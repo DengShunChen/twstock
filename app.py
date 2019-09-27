@@ -24,7 +24,7 @@ app.scripts.config.serve_locally = False
 app.config.suppress_callback_exceptions=True
 app.title = 'Tiger'    
 
-colorscale2 = cl.scales['12']['qual']['Paired']
+colorscale2 = cl.scales['6']['qual']['Dark2']
 colorscale1 = cl.scales['11']['div']['RdYlGn']
 
 logoimgsrc = "https://s3-us-west-1.amazonaws.com/plotly-tutorials/logo/new-branding/dash-logo-by-plotly-stripe.png"
@@ -264,8 +264,10 @@ def stock_figure(ticker):
         'name': ticker + ' ' +st.twse[ticker].name,
         'legendgroup': ticker + 'price',
         'increasing': {'line': {'color': colorscale1[0]}},
-        'decreasing': {'line': {'color': colorscale1[-1]}}
+        'decreasing': {'line': {'color': colorscale1[-1]}},
+        'yaxis':'y2'
     }]
+
    #bb_bands = bbands(dff.close)
    #bollinger_traces = [{
    #    'x': dff['date'], 'y': y,
@@ -276,38 +278,63 @@ def stock_figure(ticker):
    #    'showlegend': True if i==0 False,
    #    'name': '{} - {}'.format(ticker,'bollinger')
    #} for i, y in enumerate(bb_bands)]
+
     ma_list = ['ma03','ma05','ma08','ma20','ma60']
     ma_traces = [{
         'x': dff['date'], 'y': st.ma_pd[ma],
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 1.5, 'color': colorscale2[(i*2) % len(colorscale2)]},
+        'line': {'width': 1.5 if ma != 'ma20' and ma != 'ma60' else 2.5 , 'color': colorscale2[i]},
         'hoverinfo': 'name+y',
-        'legendgroup': ticker + 'anal',
+        'legendgroup': ticker+'std' if ma != 'ma20' and ma != 'ma60' else ticker+'anal',
         'showlegend': True,
-        'name': '{}'.format(ma)
+        'name': '{}'.format(ma),
+        'yaxis':'y2',
     } for i, ma in enumerate(ma_list)]
+
     variation = [{
         'x': dff['date'], 'y': st.norstd,
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 1, 'color': colorscale2[2]},
+        'line': {'width': 1, 'color': 'rgb(100,100,0)', 'dash':'dot'},
         'hoverinfo': 'y',
         'legendgroup': ticker + 'norstd',
         'showlegend': True,
         'name': '{}'.format('變異係數'),
-        'yaxis':'y2'
+        'yaxis':'y3',
     }]
+
+    close = [{
+        'x': dff['date'], 'y': dff['close'],
+        'type': 'scatter', 'mode': 'lines',
+        'line': {'width': 1, 'color': 'rgb(0,0,0)'},
+        'hoverinfo': 'y',
+        'legendgroup': 'close',
+        'showlegend': True,
+        'name': '{}'.format('收盤價'),
+    }]
+
+    capacity = [{
+        'x': dff['date'], 'y': dff['capacity'],
+        'type': 'bar', 
+        'marker' : {'color' : 'rgba(100,0,100,10)'},
+        'hoverinfo': 'y',
+        'legendgroup': 'close',
+        'showlegend': True,
+        'name': '{}'.format('成交量'),
+    }]
+
 
     graph = dcc.Graph(
           id=ticker,
           animate=True,
           figure={
-            'data': candlestick + ma_traces + variation,
+            'data': candlestick + ma_traces + variation  + capacity,
             'layout': {
-                'margin': {'b':60, 'r': 60, 'l': 60, 't': 0},
+                'margin': {'b':60, 'r': 100, 'l': 60, 't': 0},
                 'legend': {'x': 0},
-                'yaxis' : {'title':"價格"},
-                'yaxis2': {'title':"變異係數",'anchor':"x",'overlaying':"y",'side':"right"},
-                'xaxis' : {'rangeslider' : {'visible' : False}}
+                'yaxis' : {'title':"成交量",'anchor':"x",'side':"right",'showgrid':False,'zeroline':False},
+                'yaxis2': {'title':"價格",'tickprefix':"$",'side':"left", 'anchor':"x",'overlaying':'y', 'zeroline':False},
+                'yaxis3': {'title':"變異係數" ,'anchor':"free",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
+                'xaxis' : {'rangeslider' : {'visible' : False},'domain':[0, 0.94]}
             }
           }
       )
