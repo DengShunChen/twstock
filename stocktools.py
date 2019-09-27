@@ -281,12 +281,12 @@ class StockTools(object):
 
     plt.show()
 
-  def select(self):
+  def select(self,force=False):
 
     with open('seleted_stocks.json', 'r') as f:
       selected_json = json.load(f)
    
-    if self.enddate not in selected_json.keys(): 
+    if self.enddate not in selected_json.keys() or force: 
       buy='' ; sell=''
       selected_sids = {} ; selected_sids['buy'] = [] ; selected_sids['sell'] = []
       for sid in self.sids:
