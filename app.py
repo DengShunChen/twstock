@@ -46,11 +46,10 @@ benner = [
          }),
       html.Img(src=logoimgsrc,
         style={'display': 'inline',
-          'height': '100px',
+          'height': '80px',
           'float': 'right'
         }
       ),
-      html.P(),
 ]
 
 TAB_STYLE = {
@@ -294,7 +293,7 @@ def stock_figure(ticker):
     variation = [{
         'x': dff['date'], 'y': st.norstd,
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 1, 'color': 'rgb(100,100,0)', 'dash':'dot'},
+        'line': {'width': 2.0, 'color': 'rgb(100,100)', 'dash':'dot'},
         'hoverinfo': 'y',
         'legendgroup': ticker + 'norstd',
         'showlegend': True,
@@ -305,11 +304,12 @@ def stock_figure(ticker):
     close = [{
         'x': dff['date'], 'y': dff['close'],
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 1, 'color': 'rgb(0,0,0)'},
+        'line': {'width': 2.5, 'color': 'rgb(0,0,0)'},
         'hoverinfo': 'y',
         'legendgroup': 'close',
         'showlegend': True,
         'name': '{}'.format('收盤價'),
+        'yaxis':'y2',
     }]
 
     capacity = [{
@@ -317,7 +317,7 @@ def stock_figure(ticker):
         'type': 'bar', 
         'marker' : {'color' : 'rgba(100,0,100,10)'},
         'hoverinfo': 'y',
-        'legendgroup': 'close',
+        'legendgroup': 'capacity',
         'showlegend': True,
         'name': '{}'.format('成交量'),
     }]
@@ -327,7 +327,7 @@ def stock_figure(ticker):
           id=ticker,
           animate=True,
           figure={
-            'data': candlestick + ma_traces + variation  + capacity,
+            'data': close + candlestick + ma_traces + variation  + capacity,
             'layout': {
                 'margin': {'b':60, 'r': 100, 'l': 60, 't': 0},
                 'legend': {'x': 0},
