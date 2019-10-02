@@ -250,8 +250,8 @@ def bbands(price, window_size=10, num_of_std=5):
 
 def stock_figure(ticker):
 
-    dff = st.read_stock(ticker)
     st._stock_anal(ticker)
+    dff = st.stock_pd.reset_index()
 
     candlestick = [{
         'x': dff['date'],
@@ -326,7 +326,6 @@ def stock_figure(ticker):
 
     graph = dcc.Graph(
           id=ticker,
-          animate=True,
           figure={
             'data': candlestick + close + ma_traces + variation  + capacity,
             'layout': {
@@ -334,8 +333,8 @@ def stock_figure(ticker):
                 'legend': {'x': 0},
                 'yaxis' : {'title':"成交量",'anchor':"x",'side':"right",'showgrid':False,'zeroline':False},
                 'yaxis2': {'title':"價格",'tickprefix':"$",'side':"left", 'anchor':"x",'overlaying':'y', 'zeroline':False},
-                'yaxis3': {'title':"變異係數" ,'anchor':"x",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
-                'xaxis' : {'rangeslider' : {'visible' : False},'domain':[0, 0.94]}
+                'yaxis3': {'title':"變異係數" ,'anchor':"free",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
+                'xaxis' : {'title':'日期','rangeslider' : {'visible' : False},'domain':[0, 0.94],'autorange': True}
             }
           }
       )
