@@ -282,7 +282,7 @@ def stock_figure(ticker):
     ma_traces = [{
         'x': dff['date'], 'y': st.ma_pd[ma],
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 1.5 if ma != 'ma20' and ma != 'ma60' else 2.5 , 'color': colorscale2[i]},
+        'line': {'width': 1.5 if ma != 'ma20' and ma != 'ma60' else 2.5 , 'color': colorscale2[i] if ma != 'ma20' else 'rgb(200,0,0)'},
         'hoverinfo': 'name+y',
         'legendgroup': ticker+'std' if ma != 'ma20' and ma != 'ma60' else ticker+'anal',
         'showlegend': True,
@@ -314,8 +314,9 @@ def stock_figure(ticker):
 
     capacity = [{
         'x': dff['date'], 'y': dff['capacity'],
-        'type': 'bar', 
-        'marker' : {'color' : 'rgba(100,0,100,10)'},
+        'type': 'bar',
+        'line' : {'color' : 'rgba(143, 36, 118,1.0)'}, 
+        'marker' : {'color' : 'rgba(143, 36, 118,0.5)'},
         'hoverinfo': 'y',
         'legendgroup': 'capacity',
         'showlegend': True,
@@ -327,7 +328,7 @@ def stock_figure(ticker):
           id=ticker,
           animate=True,
           figure={
-            'data': close + candlestick + ma_traces + variation  + capacity,
+            'data': candlestick + close + ma_traces + variation  + capacity,
             'layout': {
                 'margin': {'b':60, 'r': 100, 'l': 60, 't': 0},
                 'legend': {'x': 0},
