@@ -334,7 +334,7 @@ def stock_figure(ticker):
                 'legend': {'x': 0},
                 'yaxis' : {'title':"成交量",'anchor':"x",'side':"right",'showgrid':False,'zeroline':False},
                 'yaxis2': {'title':"價格",'tickprefix':"$",'side':"left", 'anchor':"x",'overlaying':'y', 'zeroline':False},
-                'yaxis3': {'title':"變異係數" ,'anchor':"free",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
+                'yaxis3': {'title':"變異係數" ,'anchor':"x",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
                 'xaxis' : {'rangeslider' : {'visible' : False},'domain':[0, 0.94]}
             }
           }
