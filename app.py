@@ -283,7 +283,7 @@ def stock_figure(ticker):
         'x': dff['date'], 'y': st.ma_pd[ma],
         'type': 'scatter', 'mode': 'lines',
         'line': {'width': 1.5 if ma != 'ma20' and ma != 'ma60' else 2.5 , 'color': colorscale2[i] if ma != 'ma20' else 'rgb(200,0,0)'},
-        'hoverinfo': 'name+y',
+        'hoverinfo': 'name+y+x',
         'legendgroup': ticker+'std' if ma != 'ma20' and ma != 'ma60' else ticker+'anal',
         'showlegend': True,
         'name': '{}'.format(ma),
@@ -294,7 +294,7 @@ def stock_figure(ticker):
         'x': dff['date'], 'y': st.norstd,
         'type': 'scatter', 'mode': 'lines',
         'line': {'width': 2.0, 'color': 'rgb(100,100)', 'dash':'dot'},
-        'hoverinfo': 'y',
+        'hoverinfo': 'y+x',
         'legendgroup': ticker + 'norstd',
         'showlegend': True,
         'name': '{}'.format('變異係數'),
@@ -305,7 +305,7 @@ def stock_figure(ticker):
         'x': dff['date'], 'y': dff['close'],
         'type': 'scatter', 'mode': 'lines',
         'line': {'width': 2.5, 'color': 'rgb(0,0,0)'},
-        'hoverinfo': 'name+x+y',
+        'hoverinfo': 'name+y+x',
         'legendgroup': 'close',
         'showlegend': True,
         'name': '{}'.format('收盤價'),
@@ -317,7 +317,7 @@ def stock_figure(ticker):
         'type': 'bar',
         'line' : {'color' : 'rgba(143, 36, 118,1.0)'}, 
         'marker' : {'color' : 'rgba(143, 36, 118,0.5)'},
-        'hoverinfo': 'y',
+        'hoverinfo': 'y+x',
         'legendgroup': 'capacity',
         'showlegend': True,
         'name': '{}'.format('成交量'),
@@ -329,12 +329,42 @@ def stock_figure(ticker):
           figure={
             'data': candlestick + close + ma_traces + variation  + capacity,
             'layout': {
+                'title': st.twse[ticker].name,
                 'margin': {'b':60, 'r': 100, 'l': 60, 't': 0},
                 'legend': {'x': 0},
-                'yaxis' : {'title':"成交量",'anchor':"x",'side':"right",'showgrid':False,'zeroline':False},
-                'yaxis2': {'title':"價格",'tickprefix':"$",'side':"left", 'anchor':"x",'overlaying':'y', 'zeroline':False},
-                'yaxis3': {'title':"變異係數" ,'anchor':"free",'overlaying':'y','side':"right",'showgrid':False, 'zeroline':False, 'position':'1.0'},
-                'xaxis' : {'title':'日期','rangeslider' : {'visible' : False},'domain':[0, 0.94],'autorange': True}
+                'yaxis' : {
+                    'title':"成交量",
+                    'anchor':"x",
+                    'side':"right",
+                    'showgrid':False,
+                    'zeroline':False
+                },
+                'yaxis2': {
+                    'title':"價格",
+                    'tickprefix':"$",
+                    'side':"left", 
+                    'anchor':"x",
+                    'overlaying':'y', 
+                    'zeroline':False
+                },
+                'yaxis3': {
+                    'title':"變異係數" ,
+                    'anchor':"free",
+                    'overlaying':'y',
+                    'side':"right",
+                    'showgrid':False, 
+                    'zeroline':False, 
+                    'position':'1.0',
+                },
+                'xaxis' : {
+                    'title':'日期',
+                    'rangeslider' : {'visible' : False},
+                    'domain':[0, 0.94],
+                    'autorange': True,
+                    'autoscale':True, 
+                    'type':'date',
+                },
+                'hovermode' : 'x',
             }
           }
       )
