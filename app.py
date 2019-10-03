@@ -329,8 +329,8 @@ def stock_figure(ticker):
           figure={
             'data': candlestick + close + ma_traces + variation  + capacity,
             'layout': {
-                'title': st.twse[ticker].name,
-                'margin': {'b':60, 'r': 100, 'l': 60, 't': 0},
+                'title': ticker +' '+ st.twse[ticker].name,
+                'margin': {'b':30, 'r': 50, 'l': 50, 't': 50},
                 'legend': {'x': 0},
                 'yaxis' : {
                     'title':"成交量",
@@ -357,7 +357,6 @@ def stock_figure(ticker):
                     'position':'1.0',
                 },
                 'xaxis' : {
-                    'title':'日期',
                     'rangeslider' : {'visible' : False},
                     'domain':[0, 0.94],
                     'autorange': True,
