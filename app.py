@@ -305,7 +305,7 @@ def stock_figure(ticker):
         'x': dff['date'], 'y': dff['close'],
         'type': 'scatter', 'mode': 'lines',
         'line': {'width': 2.5, 'color': 'rgb(0,0,0)'},
-        'hoverinfo': 'y',
+        'hoverinfo': 'name+x+y',
         'legendgroup': 'close',
         'showlegend': True,
         'name': '{}'.format('收盤價'),
