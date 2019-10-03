@@ -293,7 +293,7 @@ def stock_figure(ticker):
     variation = [{
         'x': dff['date'], 'y': st.norstd,
         'type': 'scatter', 'mode': 'lines',
-        'line': {'width': 2.0, 'color': 'rgb(100,100)', 'dash':'dot'},
+        'line': {'width': 2.0, 'color': 'rgb(100,100,0)', 'dash':'dot'},
         'hoverinfo': 'y+x',
         'legendgroup': ticker + 'norstd',
         'showlegend': True,
@@ -360,10 +360,20 @@ def stock_figure(ticker):
                     'rangeslider' : {'visible' : False},
                     'domain':[0, 0.94],
                     'autorange': True,
-                    'autoscale':True, 
+                    'autoscale': True, 
                     'type':'date',
                 },
                 'hovermode' : 'x',
+                'shapes': [{
+                  'x0': st.strdate, 'x1': st.enddate,
+                  'y0': 0.002, 'y1': 0.002, 'xref': 'x', 'yref': 'y3',
+                  'line': {'color': 'rgba(100,100,0,0.7)', 'width': 1.}
+                }],
+              # 'annotations': [{
+              #   'x': '2007-12-01', 'y': 0.05, 'xref': 'y', 'yref': 'paper',
+              #   'showarrow': False, 'xanchor': 'left',
+              #   'text': 'Official start of the recession'
+              # }]
             }
           }
       )
