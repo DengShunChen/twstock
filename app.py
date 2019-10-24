@@ -85,7 +85,7 @@ app.layout = html.Div([
         className='custom-tabs-container',
         children=[
             dcc.Tab(
-                label='選股',
+                label='篩選股票',
                 value='tab-1',
                 className='custom-tab',
                 selected_className='custom-tab--selected',
@@ -294,7 +294,7 @@ def stock_figure(ticker):
         'x': dff['date'], 'y': st.norstd,
         'type': 'scatter', 'mode': 'lines',
         'line': {'width': 2.0, 'color': 'rgb(100,100,0)', 'dash':'dot'},
-        'hoverinfo': 'y+x',
+        'hoverinfo': 'name+y+x',
         'legendgroup': ticker + 'norstd',
         'showlegend': True,
         'name': '{}'.format('變異係數'),
@@ -317,7 +317,7 @@ def stock_figure(ticker):
         'type': 'bar',
         'line' : {'color' : 'rgba(143, 36, 118,1.0)'}, 
         'marker' : {'color' : 'rgba(143, 36, 118,0.5)'},
-        'hoverinfo': 'y+x',
+        'hoverinfo': 'name+y+x',
         'legendgroup': 'capacity',
         'showlegend': True,
         'name': '{}'.format('成交量'),
