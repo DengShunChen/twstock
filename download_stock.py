@@ -25,3 +25,7 @@ for i in range(5):
     update()
   except:
     continue
+
+st.strdate = (datetime.now() - timedelta(days=31)).strftime("%Y-%m-%d")
+st.enddate = today
+st.select(force=True)
