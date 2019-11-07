@@ -2,7 +2,7 @@
  
 message=$1
 if [ $# -eq 0 ] ; then
-  message='update stockdb'
+  message='daily update stockdb'
 fi
 
 cd /home/pi/twstocktiger/
@@ -13,6 +13,7 @@ touch downloaded.txt
 
 git pull
 git add stocksdb/*
+git add seleted_stocks.json
 git commit -am "$message"
 git push heroku master
 
