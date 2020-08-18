@@ -1,10 +1,12 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 from stocktools import StockTools
-from datetime import datetime
+from datetime import datetime, timedelta
 
 today = datetime.now().strftime('%Y-%m-%d')
-st = StockTools(today)
+start = datetime(2020,1,1).strftime('%Y-%m-%d')
+st = StockTools(start,today)
 logfile = '/home/pi/twstocktiger/downloaded.txt'
+
 def update():
   saved_stock = []
   with open(logfile,'r') as f:

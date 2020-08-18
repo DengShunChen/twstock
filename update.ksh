@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
  
 message=$1
 if [ $# -eq 0 ] ; then
@@ -9,7 +10,7 @@ cd /home/pi/twstocktiger/
 rm -rf downloaded.txt
 touch downloaded.txt
 
-/usr/bin/python /home/pi/twstocktiger/download_stock.py > /home/pi/twstocktiger/logs.txt
+python3 download_stock.py
 
 git pull
 git add stocksdb/*
