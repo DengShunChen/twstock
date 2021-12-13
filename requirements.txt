@@ -10,5 +10,5 @@ matplotlib==3.1.1
 numpy==1.16.4
 pandas==0.25.1
 requests==2.22.0
-lxml==4.6.2
+lxml==4.6.5
 colorlover==0.3.0
